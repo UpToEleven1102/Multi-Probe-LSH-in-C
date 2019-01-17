@@ -5,7 +5,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <time.h>
-#include<math.h>
+#include <math.h>
 #include "utils.h"
 
 double *generateDataSet(int dim, int n_data) {
@@ -25,7 +25,7 @@ double *newUnitVector(int dim) {
 
     double vectorLength = 0;
     for (int i = 0; i < dim; ++i) {
-        vectorLength += unitVector[i]*unitVector[i];
+        vectorLength += unitVector[i] * unitVector[i];
     }
 
     vectorLength = sqrt(vectorLength);
@@ -38,7 +38,7 @@ double *newUnitVector(int dim) {
 }
 
 double **generateHashTable(int m, int dim) {
-    double **h = (double **) malloc(m*sizeof(double));
+    double **h = (double **) malloc(m * sizeof(double));
 
     for (int i = 0; i < m; ++i) {
         h[i] = newUnitVector(dim);
@@ -47,15 +47,25 @@ double **generateHashTable(int m, int dim) {
     return h;
 }
 
+double *getElementAtIndex(int idx, int dim, int n_data, double *data) {
+    double *ele = (double *) malloc(dim * sizeof(double));
+
+    if (idx < n_data)
+        for (int i = 0; i < dim; ++i) {
+            ele[i] = data[idx * dim + i];
+        }
+    return ele;
+}
+
 double ***generateHashTables(int l, int m, int dim) {
-    double ***hashTables = (double***)malloc(l*sizeof(double**));
+    double ***hashTables = (double ***) malloc(l * sizeof(double **));
 
     for (int i = 0; i < l; ++i) {
         hashTables[i] = generateHashTable(m, dim);
     }
 }
 
-void printDataSet(int dim, int n_data, double *data) {
+void printDataSet(int dim, int n_data, const double *data) {
     int counter = 0;
     for (int i = 0; i < dim * n_data; ++i) {
         if (i % 4 == 0) {
