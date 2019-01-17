@@ -5,24 +5,60 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <time.h>
+#include<math.h>
 #include "utils.h"
 
-float* generateDataSet(int dim, int n_data){
-    float* data = (float*)malloc(sizeof(float)*dim*n_data);
+double *generateDataSet(int dim, int n_data) {
+    double *data = (double *) malloc(sizeof(double) * dim * n_data);
 
     srand((unsigned int) time(NULL));
 
     for (int i = 0; i < dim * n_data; ++i) {
-        data[i] = (float)rand()/RAND_MAX;
+        data[i] = (double) rand() / RAND_MAX;
     }
 
     return data;
 }
 
-void printDataSet(int dim, int n_data, float *data) {
+double *newUnitVector(int dim) {
+    double *unitVector = generateDataSet(dim, 1);
+
+    double vectorLength = 0;
+    for (int i = 0; i < dim; ++i) {
+        vectorLength += unitVector[i]*unitVector[i];
+    }
+
+    vectorLength = sqrt(vectorLength);
+
+    for (int i = 0; i < dim; ++i) {
+        unitVector[i] = unitVector[i] / vectorLength;
+    }
+
+    return unitVector;
+}
+
+double **generateHashTable(int m, int dim) {
+    double **h = (double **) malloc(m*sizeof(double));
+
+    for (int i = 0; i < m; ++i) {
+        h[i] = newUnitVector(dim);
+    }
+
+    return h;
+}
+
+double ***generateHashTables(int l, int m, int dim) {
+    double ***hashTables = (double***)malloc(l*sizeof(double**));
+
+    for (int i = 0; i < l; ++i) {
+        hashTables[i] = generateHashTable(m, dim);
+    }
+}
+
+void printDataSet(int dim, int n_data, double *data) {
     int counter = 0;
     for (int i = 0; i < dim * n_data; ++i) {
-        if (i %4 == 0) {
+        if (i % 4 == 0) {
             printf("%d ---\n", counter++);
         }
         printf("%f \n", data[i]);
