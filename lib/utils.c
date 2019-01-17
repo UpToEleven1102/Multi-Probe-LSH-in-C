@@ -11,7 +11,6 @@
 double *generateDataSet(int dim, int n_data) {
     double *data = (double *) malloc(sizeof(double) * dim * n_data);
 
-    srand((unsigned int) time(NULL));
 
     for (int i = 0; i < dim * n_data; ++i) {
         data[i] = (double) rand() / RAND_MAX;
@@ -63,15 +62,27 @@ double ***generateHashTables(int l, int m, int dim) {
     for (int i = 0; i < l; ++i) {
         hashTables[i] = generateHashTable(m, dim);
     }
+
+    return hashTables;
 }
 
 void printDataSet(int dim, int n_data, const double *data) {
     int counter = 0;
     for (int i = 0; i < dim * n_data; ++i) {
-        if (i % 4 == 0) {
+        if (i % dim == 0) {
             printf("%d ---\n", counter++);
         }
         printf("%f \n", data[i]);
+    }
+}
+
+void printHashTables(int dim, int l, int m, double ***tables) {
+    for (int i = 0; i < l; ++i) {
+        printf("table %d \n", i);
+        for (int j = 0; j < m; ++j) {
+            printf("function # %d \n", j);
+            printDataSet(dim, 1, tables[i][j]);
+        }
     }
 }
 
