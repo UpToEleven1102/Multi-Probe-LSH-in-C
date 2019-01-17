@@ -47,7 +47,7 @@ double **generateHashTable(int m, int dim) {
     return h;
 }
 
-double *getElementAtIndex(int idx, int dim, int n_data, double *data) {
+double *getElementAtIndex(int idx, int dim, int n_data, const double *data) {
     double *ele = (double *) malloc(dim * sizeof(double));
 
     if (idx < n_data)

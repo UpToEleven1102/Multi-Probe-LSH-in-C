@@ -9,6 +9,6 @@ double* generateDataSet(int dim, int n_data);
 void printDataSet(int dim, int n_data, const double *data);
 double ***generateHashTables(int l, int m, int dim);
 
-double *getElementAtIndex(int idx, int dim, int n_data, double *data);
+double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
 #endif //LSH_PROBING_UTILS_H
