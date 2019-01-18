@@ -31,7 +31,7 @@ bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
     return true;
 }
 
-int insert(int dim, int l, int m, int w, double ***hashTables, double *ele) {
+int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
     double **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
 
     if (hashBuckets == NULL) {
@@ -57,17 +57,20 @@ int insert(int dim, int l, int m, int w, double ***hashTables, double *ele) {
         ite = ite->next;
     }
 
-    hashBuckets = (HashBucket*)malloc(sizeof(HashBucket));
-    hashBuckets->hashValues = hashValues;
+    HashBucket *bucket = (HashBucket*)malloc(sizeof(HashBucket));
+    bucket->hashValues = hashValues;
     LinkedList *head = (LinkedList*)malloc(sizeof(LinkedList));
     head->data = ele;
     head->next = NULL;
-    hashBuckets->head = head;
+    bucket->head = head;
+    bucket->next = hashBuckets;
+
+    hashBuckets=bucket;
 
     return 0;
 }
 
-HashBucket *LSH(int dim, int n_data, int l, int m, int w, double ***hashTables, double *data) {
+HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data) {
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
         insert(dim, l, m, w, hashTables, ele);

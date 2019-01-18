@@ -4,11 +4,14 @@
 #include <math.h>
 #include <time.h>
 #include "lib/utils.h"
+#include "lib/lsh.h"
 
 //TODO: more research about number L and M, how many are needed
 // how large we should choose value of L, paper
 // hash functions are unit vectors?
 // hashValue formula   <a.v -b> / w. what is b??
+
+//W is dependent to the number of data points
 
 void initParameters(int *L, int *M, double *W, int dim, int n_data, const double *data) {
     //comeback and pick this up later
@@ -44,7 +47,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
         }
     }
 
-    *W = maxDistance / 4;
+    *W = maxDistance / 2;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -68,7 +71,9 @@ int main() {
     printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
     double ***hashTables = generateHashTables(*L, *M, dim);
 
+    HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data);
 
+    printHashBuckets(dim, *L, *M, buckets);
 
     //verify variables
 //    printHashTables(dim, *L, *M, hashTables);
@@ -84,5 +89,4 @@ int main() {
     }
     free(hashTables);
     free(L); free(M); free(W);free(data);
-
 }

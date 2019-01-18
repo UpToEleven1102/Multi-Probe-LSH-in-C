@@ -33,4 +33,6 @@ double calculateHashValue(int dim, double w, double *ele, double *hashFunc);
 
 void printHashTables(int dim, int l, int m, double ***tables);
 
+void printHashBuckets(int dim, int l, int m, HashBucket *buckets);
+
 #endif //LSH_PROBING_UTILS_H

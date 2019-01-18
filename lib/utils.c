@@ -15,7 +15,6 @@ double innerProduct(const double *vector1, const double *vector2, int dim) {
     for (int i = 0; i < dim; ++i) {
         product += vector1[i] * vector2[i];
     }
-
     return product;
 }
 
@@ -89,7 +88,6 @@ void printDataSet(int dim, int n_data, const double *data) {
 
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
     double hashValue = innerProduct(ele, hashFunc, dim) / w;
-
     return floor(hashValue);
 }
 
@@ -103,3 +101,35 @@ void printHashTables(int dim, int l, int m, double ***tables) {
     }
 }
 
+void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
+    HashBucket *ite = buckets;
+    int counter = 0;
+
+    printf("-- parameters: dim %d l %d m %d \n", dim, l, m);
+
+    while (ite != NULL) {
+        printf("Bucket %d \n Hash Values: -- \n", counter++);
+
+        for (int i = 0; i < l; ++i) {
+            printf("Table %d -- \n", i);
+            for (int j = 0; j < m; ++j) {
+                printf("e %f \n", ite->hashValues[i][j]);
+            }
+        }
+
+
+        printf("Elements: \n");
+
+        LinkedList *listIte = ite->head;
+
+        while(listIte != NULL) {
+            printDataSet(dim, 1, listIte->data);
+            listIte = listIte->next;
+        }
+
+        free(listIte);
+        ite = ite->next;
+    }
+
+    free(ite);
+}
