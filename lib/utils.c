@@ -8,19 +8,7 @@
 #include <math.h>
 #include "utils.h"
 
-typedef struct LinkedList LinkedList;
-typedef struct HashTable HashTable;
 
-struct LinkedList {
-    double *data;
-    LinkedList *next;
-};
-
-struct HashTable {
-    LinkedList *head;
-    double *hashValue;
-    HashTable *next;
-};
 
 double innerProduct(const double *vector1, const double *vector2, int dim) {
     double product = 0;
@@ -97,6 +85,12 @@ void printDataSet(int dim, int n_data, const double *data) {
         }
         printf("%f \n", data[i]);
     }
+}
+
+double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
+    double hashValue = innerProduct(ele, hashFunc, dim) / w;
+
+    return floor(hashValue);
 }
 
 void printHashTables(int dim, int l, int m, double ***tables) {

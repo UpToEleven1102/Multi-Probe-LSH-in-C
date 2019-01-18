@@ -6,6 +6,9 @@
 #include "lib/utils.h"
 
 //TODO: more research about number L and M, how many are needed
+// how large we should choose value of L, paper
+// hash functions are unit vectors?
+// hashValue formula   <a.v -b> / w. what is b??
 
 void initParameters(int *L, int *M, double *W, int dim, int n_data, const double *data) {
     //comeback and pick this up later
