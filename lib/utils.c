@@ -8,6 +8,29 @@
 #include <math.h>
 #include "utils.h"
 
+typedef struct LinkedList LinkedList;
+typedef struct HashTable HashTable;
+
+struct LinkedList {
+    double *data;
+    LinkedList *next;
+};
+
+struct HashTable {
+    LinkedList *head;
+    double *hashValue;
+    HashTable *next;
+};
+
+double innerProduct(const double *vector1, const double *vector2, int dim) {
+    double product = 0;
+    for (int i = 0; i < dim; ++i) {
+        product += vector1[i] * vector2[i];
+    }
+
+    return product;
+}
+
 double *generateDataSet(int dim, int n_data) {
     double *data = (double *) malloc(sizeof(double) * dim * n_data);
 

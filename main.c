@@ -65,7 +65,10 @@ int main() {
     printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
     double ***hashTables = generateHashTables(*L, *M, dim);
 
-    printHashTables(dim, *L, *M, hashTables);
+
+
+    //verify variables
+//    printHashTables(dim, *L, *M, hashTables);
 //    printDataSet(dim, n_data, data);
 
 
