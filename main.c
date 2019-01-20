@@ -11,6 +11,8 @@
 // hash functions are unit vectors?
 // hashValue formula   <a.v -b> / w. what is b??
 
+//b = centroid * hash functions??????? data dependent
+
 //W is dependent to the number of data points
 
 void initParameters(int *L, int *M, double *W, int dim, int n_data, const double *data) {
@@ -81,6 +83,26 @@ int main() {
 
 
     //free pointer variables
+    HashBucket *ite = buckets;
+    while(ite!= NULL) {
+        HashBucket *temp = ite;
+        ite = ite->next;
+        for (int i = 0; i < *L; ++i) {
+                free(temp->hashValues[i]);
+        }
+        free(temp->hashValues);
+        LinkedList *listIte = temp->head;
+
+        while(listIte!=NULL) {
+            LinkedList *tempListIte = listIte;
+            listIte = listIte->next;
+            free(tempListIte->data);
+            free(tempListIte);
+        }
+
+        free(temp);
+    }
+
     for (int i = 0; i < *L; ++i) {
         for (int j = 0; j < *M; ++j) {
             free(hashTables[i][j]);
