@@ -27,6 +27,8 @@ double* generateDataSet(int dim, int n_data);
 void printDataSet(int dim, int n_data, const double *data);
 double ***generateHashTables(int l, int m, int dim);
 
+double distanceOfTwoPoints(int dim, double *point1, double *point2);
+
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc);

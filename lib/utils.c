@@ -9,6 +9,15 @@
 #include "utils.h"
 
 
+double distanceOfTwoPoints(int dim, double *point1, double *point2){
+    double distance = 0;
+
+    for (int i = 0; i < dim; ++i) {
+        distance += (point1[i] - point2[i]) * (point1[i] - point2[i]);
+    }
+
+    return sqrt(distance);
+}
 
 double innerProduct(const double *vector1, const double *vector2, int dim) {
     double product = 0;

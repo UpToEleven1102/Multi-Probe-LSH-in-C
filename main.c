@@ -5,6 +5,7 @@
 #include <time.h>
 #include "lib/utils.h"
 #include "lib/lsh.h"
+#include "lib/lsh_probing.h"
 
 //TODO: more research about number L and M, how many are needed
 // how large we should choose value of L, paper
@@ -62,8 +63,8 @@ int main() {
     const int n_data = 100;
     double *data = generateDataSet(dim, n_data);
 
-    srand((unsigned int) time(NULL));
-
+//    srand((unsigned int) time(NULL));
+    srand(3);
     int *L = (int *) malloc(sizeof(int));
     int *M = (int *) malloc(sizeof(int));
     double *W = (double *) malloc(sizeof(double));
@@ -75,7 +76,35 @@ int main() {
 
     HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data);
 
+    printf("hash buckets: \n");
     printHashBuckets(dim, *L, *M, buckets);
+
+    double *query = generateDataSet(dim, 1);
+
+    double *result = lshProbing(dim, n_data, *L, *M, hashTables, buckets);
+
+    printf("Query point: \n");
+    printDataSet(dim,1, query);
+
+    printf("Distance of query to data points in data set: \n");
+
+    int closestIdx = 0;
+    double closestDistance = RAND_MAX;
+
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        double distance = distanceOfTwoPoints(dim, query, ele);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIdx = i;
+        }
+
+        printf("data %d: %f \n", i, distance);
+
+        free(ele);
+    }
+
+    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
 
     //verify variables
 //    printHashTables(dim, *L, *M, hashTables);
