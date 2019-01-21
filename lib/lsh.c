@@ -8,29 +8,6 @@
 
 HashBucket *hashBuckets = NULL;
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
-    double **hashValues = (double **) malloc(l * sizeof(double *));
-    for (int i = 0; i < l; ++i) {
-        hashValues[i] = (double *) malloc(m * sizeof(double));
-        for (int j = 0; j < m; ++j) {
-            hashValues[i][j] = calculateHashValue(dim, w, ele, hashTables[i][j]);
-        }
-    }
-
-    return hashValues;
-}
-
-bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
-    for (int i = 0; i < l; ++i) {
-        for (int j = 0; j < m; ++j) {
-            if (hashValue1[i][j] != hashValue2[i][j])
-                return false;
-        }
-    }
-
-    return true;
-}
-
 int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
     double **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
 

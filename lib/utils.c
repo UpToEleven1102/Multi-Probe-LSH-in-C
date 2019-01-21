@@ -55,6 +55,17 @@ double *newUnitVector(int dim) {
     return unitVector;
 }
 
+bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
+    for (int i = 0; i < l; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (hashValue1[i][j] != hashValue2[i][j])
+                return false;
+        }
+    }
+
+    return true;
+}
+
 double **generateHashTable(int m, int dim) {
     double **h = (double **) malloc(m * sizeof(double));
 
@@ -95,10 +106,24 @@ void printDataSet(int dim, int n_data, const double *data) {
     }
 }
 
+
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
     double hashValue = innerProduct(ele, hashFunc, dim) / w;
     return floor(hashValue);
 }
+
+double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
+    double **hashValues = (double **) malloc(l * sizeof(double *));
+    for (int i = 0; i < l; ++i) {
+        hashValues[i] = (double *) malloc(m * sizeof(double));
+        for (int j = 0; j < m; ++j) {
+            hashValues[i][j] = calculateHashValue(dim, w, ele, hashTables[i][j]);
+        }
+    }
+
+    return hashValues;
+}
+
 
 void printHashTables(int dim, int l, int m, double ***tables) {
     for (int i = 0; i < l; ++i) {

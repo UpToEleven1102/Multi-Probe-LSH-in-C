@@ -8,6 +8,7 @@
 #include "lib/lsh_probing.h"
 
 //TODO: more research about number L and M, how many are needed
+//TODO: implement b
 // how large we should choose value of L, paper
 // hash functions are unit vectors?
 // hashValue formula   <a.v -b> / w. what is b??
@@ -81,12 +82,16 @@ int main() {
 
     double *query = generateDataSet(dim, 1);
 
-    double *result = lshProbing(dim, n_data, *L, *M, hashTables, buckets);
+
+    //start lsh_probing
+    double *result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
+
+
 
     printf("Query point: \n");
     printDataSet(dim,1, query);
 
-    printf("Distance of query to data points in data set: \n");
+//    printf("Distance of query to data points in data set: \n");
 
     int closestIdx = 0;
     double closestDistance = RAND_MAX;
@@ -99,9 +104,16 @@ int main() {
             closestIdx = i;
         }
 
-        printf("data %d: %f \n", i, distance);
+//        printf("data %d: %f \n", i, distance);
 
         free(ele);
+    }
+
+    if(result==NULL) {
+        printf("result = NULL");
+    } else {
+        printf("Closest data point: \n");
+        printDataSet(dim, 1, result);
     }
 
     printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);

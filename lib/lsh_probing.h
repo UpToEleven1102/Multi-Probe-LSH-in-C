@@ -7,7 +7,6 @@
 
 #include "utils.h"
 
-double *lshProbing(int dim, int n_data, int l, int m, double*** hashTables, HashBucket *buckets);
-
+double *lshProbing(int dim, int n_data, int l, int m, double w, double*** hashTables, HashBucket *buckets, double *query, double *data);
 
 #endif //LSH_PROBING_LSH_PROBING_H
