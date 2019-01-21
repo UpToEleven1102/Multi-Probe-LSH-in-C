@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "lsh_probing.h"
 
 
@@ -21,5 +22,23 @@ double *lshProbing(int dim, int n_data, int l, int m, double w, double*** hashTa
         ite = ite->next;
     }
 
-    return currentBucketHead->data;
+    if(currentBucketHead == NULL) {
+        return NULL;
+    }
+
+    double *result_ptr;
+    double shortestDistance = RAND_MAX;
+
+    while(currentBucketHead != NULL) {
+        double distance = distanceOfTwoPoints(dim, currentBucketHead->data, query);
+        if (distance < shortestDistance) {
+            shortestDistance = distance;
+            result_ptr = currentBucketHead->data;
+        }
+        currentBucketHead = currentBucketHead->next;
+    }
+
+    printf("shortest distance: %f \n", shortestDistance);
+
+    return result_ptr;
 }

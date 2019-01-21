@@ -61,7 +61,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
 
 int main() {
     const int dim = 8;
-    const int n_data = 100;
+    const int n_data = 1000;
     double *data = generateDataSet(dim, n_data);
 
 //    srand((unsigned int) time(NULL));
@@ -85,8 +85,6 @@ int main() {
 
     //start lsh_probing
     double *result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
-
-
 
     printf("Query point: \n");
     printDataSet(dim,1, query);
