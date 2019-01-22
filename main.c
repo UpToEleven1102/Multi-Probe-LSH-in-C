@@ -17,13 +17,15 @@
 
 //W is dependent to the number of data points
 
+//slides: intuitions wrong: 1-step buckets are not better than 2-step buckets, paper: 1step buckets are not neccessary better than buckets that are 2 steps away
+
 void initParameters(int *L, int *M, double *W, int dim, int n_data, const double *data) {
     //comeback and pick this up later
-    *M = (int)floor(dim/2.0);
+    *M = (int) floor(dim / 2.0);
 
     *L = *M;
 
-    double **buff = (double**) malloc(dim * sizeof(double *));
+    double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
         buff[i] = (double *) malloc(2 * sizeof(double));
@@ -87,7 +89,7 @@ int main() {
     double *result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
 
     printf("Query point: \n");
-    printDataSet(dim,1, query);
+    printDataSet(dim, 1, query);
 
 //    printf("Distance of query to data points in data set: \n");
 
@@ -101,13 +103,11 @@ int main() {
             closestDistance = distance;
             closestIdx = i;
         }
-
 //        printf("data %d: %f \n", i, distance);
-
         free(ele);
     }
 
-    if(result==NULL) {
+    if (result == NULL) {
         printf("result = NULL");
     } else {
         printf("Closest data point: \n");
@@ -123,16 +123,16 @@ int main() {
 
     //free pointer variables
     HashBucket *ite = buckets;
-    while(ite!= NULL) {
+    while (ite != NULL) {
         HashBucket *temp = ite;
         ite = ite->next;
         for (int i = 0; i < *L; ++i) {
-                free(temp->hashValues[i]);
+            free(temp->hashValues[i]);
         }
         free(temp->hashValues);
         LinkedList *listIte = temp->head;
 
-        while(listIte!=NULL) {
+        while (listIte != NULL) {
             LinkedList *tempListIte = listIte;
             listIte = listIte->next;
             free(tempListIte->data);
@@ -149,5 +149,8 @@ int main() {
         free(hashTables[i]);
     }
     free(hashTables);
-    free(L); free(M); free(W);free(data);
+    free(L);
+    free(M);
+    free(W);
+    free(data);
 }
