@@ -23,6 +23,9 @@ struct HashBucket {
 typedef struct LinkedList LinkedList;
 typedef struct HashBucket HashBucket;
 
+
+double *calculateCentroid(int dim, int n_data, double *data);
+
 double* generateDataSet(int dim, int n_data);
 void printDataSet(int dim, int n_data, const double *data);
 double ***generateHashTables(int l, int m, int dim);
@@ -31,9 +34,9 @@ double distanceOfTwoPoints(int dim, double *point1, double *point2);
 
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
-double calculateHashValue(int dim, double w, double *ele, double *hashFunc);
+double calculateHashValue(int dim, double w, double *ele, const double *centroid, double *hashFunc);
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
+double **calculateHashValues(int dim, int l, int m, double w, const double *centroid, double ***hashTables, double *ele);
 
 void printHashTables(int dim, int l, int m, double ***tables);
 

@@ -9,7 +9,30 @@
 #include "utils.h"
 
 
-double distanceOfTwoPoints(int dim, double *point1, double *point2){
+double *calculateCentroid(int dim, int n_data, double *data) {
+    double *centroid = (double *) malloc(dim * sizeof(double));
+
+    for (int i = 0; i < dim; ++i) {
+        centroid[i] = 0;
+    }
+
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        for (int j = 0; j < dim; ++j) {
+            centroid[j] += ele[j];
+        }
+
+        free(ele);
+    }
+
+    for (int i = 0; i < dim; ++i) {
+        centroid[i] = centroid[i] / n_data;
+    }
+
+    return centroid;
+}
+
+double distanceOfTwoPoints(int dim, double *point1, double *point2) {
     double distance = 0;
 
     for (int i = 0; i < dim; ++i) {
@@ -107,17 +130,19 @@ void printDataSet(int dim, int n_data, const double *data) {
 }
 
 
-double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
-    double hashValue = innerProduct(ele, hashFunc, dim) / w;
+double calculateHashValue(int dim, double w, double *ele, const double *centroid, double *hashFunc) {
+    const double b = innerProduct(centroid, hashFunc, dim);
+    double hashValue = (innerProduct(ele, hashFunc, dim) - b) / w;
     return floor(hashValue);
 }
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
+double **
+calculateHashValues(int dim, int l, int m, double w, const double *centroid, double ***hashTables, double *ele) {
     double **hashValues = (double **) malloc(l * sizeof(double *));
     for (int i = 0; i < l; ++i) {
         hashValues[i] = (double *) malloc(m * sizeof(double));
         for (int j = 0; j < m; ++j) {
-            hashValues[i][j] = calculateHashValue(dim, w, ele, hashTables[i][j]);
+            hashValues[i][j] = calculateHashValue(dim, w, ele, centroid, hashTables[i][j]);
         }
     }
 
@@ -156,7 +181,7 @@ void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
 
         LinkedList *listIte = ite->head;
 
-        while(listIte != NULL) {
+        while (listIte != NULL) {
             printDataSet(dim, 1, listIte->data);
             listIte = listIte->next;
         }

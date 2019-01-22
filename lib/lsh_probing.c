@@ -8,7 +8,9 @@
 
 double *lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, double *data)
 {
-    double **queryHashValue = calculateHashValues(dim, l, m, w, hashTables, query);
+    const double *centroid = calculateCentroid(dim, n_data, data);
+
+    double **queryHashValue = calculateHashValues(dim, l, m, w, centroid, hashTables, query);
 
     int **pertubationVector = (int **)malloc(3 * sizeof(int *));
 

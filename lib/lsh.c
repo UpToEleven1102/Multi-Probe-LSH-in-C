@@ -8,8 +8,8 @@
 
 HashBucket *hashBuckets = NULL;
 
-int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
-    double **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
+int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, const double *centroid) {
+    double **hashValues = calculateHashValues(dim, l, m, w, centroid, hashTables, ele);
 
     if (hashBuckets == NULL) {
         hashBuckets = (HashBucket*)malloc(sizeof(HashBucket));
@@ -48,9 +48,14 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
 }
 
 HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data) {
+    const double *centroid = calculateCentroid(dim, n_data, data);
+
+    printf("Centroid: \n");
+    printDataSet(dim, 1, centroid);
+
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
-        insert(dim, l, m, w, hashTables, ele);
+        insert(dim, l, m, w, hashTables, ele, centroid);
     }
 
     return hashBuckets;
