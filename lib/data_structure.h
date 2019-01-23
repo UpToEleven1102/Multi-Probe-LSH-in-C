@@ -5,6 +5,8 @@
 #ifndef LSH_PROBING_DATA_STRUCTURE_H
 #define LSH_PROBING_DATA_STRUCTURE_H
 
+#include "utils.h"
+
 //struct for value z in first 2-m array
 struct Z {
     double x;
@@ -15,19 +17,28 @@ struct Z {
 
 //linked list struct for perturbation sets
 struct A {
-    double *data;
+    int *data;
+    double score;
     int length;
     struct A *next;
+
+    void (*calculateScore)(struct A*, struct Z*);
+    bool (*isValid)(struct A*, int);
 };
+
+void calculateScoreA(struct A*, struct Z*);
 
 struct Heap {
     struct A *head;
     void (*add)(struct Heap*, struct A*);
     void (*remove)(struct Heap*, struct A*);
+    struct A* (*extractMin)(struct Heap*)
 };
 
 void addHeapLinkedList(struct Heap*, struct A*);
 
 void removeHeapLinkedList(struct Heap*, struct A*);
+
+struct A * extractMinHeapLinkedList(struct Heap*);
 
 #endif //LSH_PROBING_DATA_STRUCTURE_H
