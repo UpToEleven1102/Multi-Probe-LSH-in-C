@@ -58,14 +58,18 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
     struct Heap heap = {NULL, addHeapLinkedList, removeHeapLinkedList, extractMinHeapLinkedList};
 
     //initialize first perturbation set
-    struct A *head = (struct A*)malloc(sizeof(struct A));
-    head->data = (double*)malloc(sizeof(double));
-    head->next=NULL;
-    head->length = 1;
-    head->data[0] = 1;
-    head->calculateScore = calculateScoreA;
 
-    heap.add(&heap, head);
+
+    struct A head = {(int[]){1}, 0, 1, NULL, calculateScoreA, isValidA};
+//    struct A *head = (struct A*)malloc(sizeof(struct A));
+//    head->data = (double*)malloc(sizeof(double));
+//    head->next=NULL;
+//    head->length = 1;
+//    head->data[0] = 1;
+//    head->calculateScore = calculateScoreA;
+//    head->isValid = isValidA;
+
+    heap.add(&heap, &head);
 
 
     for (int i = 0; i < t; ++i) {

@@ -27,6 +27,7 @@ struct A {
 };
 
 void calculateScoreA(struct A*, struct Z*);
+bool isValidA(struct A *_this, int twoM);
 
 struct Heap {
     struct A *head;
