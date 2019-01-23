@@ -9,7 +9,7 @@
 #include "utils.h"
 
 
-double distanceOfTwoPoints(int dim, double *point1, double *point2){
+double distanceOfTwoPoints(int dim, double *point1, double *point2) {
     double distance = 0;
 
     for (int i = 0; i < dim; ++i) {
@@ -106,6 +106,27 @@ void printDataSet(int dim, int n_data, const double *data) {
     }
 }
 
+double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r) {
+    if (r == 0) return 0;
+    double distanceToTheLeft = innerProduct(query, hashFunc, dim) - calculateHashValue(dim, w, query, hashFunc) * w;
+
+    if (r == -1)
+        return distanceToTheLeft;
+    if (r == 1)
+        return w - distanceToTheLeft;
+    return 0;
+
+}
+
+double scorePerturbationVector(int dim, int m, double w, double *query, double **hashTable, int *vector) {
+    double score = 0;
+    for (int i = 0; i < m; ++i) {
+        double distance = distanceToBoundary(dim, w, query, hashTable[i], vector[i]);
+        score += distance * distance;
+    }
+    return score;
+}
+
 
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
     double hashValue = innerProduct(ele, hashFunc, dim) / w;
@@ -156,7 +177,7 @@ void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
 
         LinkedList *listIte = ite->head;
 
-        while(listIte != NULL) {
+        while (listIte != NULL) {
             printDataSet(dim, 1, listIte->data);
             listIte = listIte->next;
         }

@@ -6,38 +6,104 @@
 #include <stdlib.h>
 #include "lsh_probing.h"
 
-double *lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, double *data)
-{
+struct Z {
+    double x;
+    int i;
+    int r;
+};
+
+void shift(int length, double *set) {
+    set[length - 1]++;
+}
+
+double *expand(int length, const double *set) {
+    double *newSet = (double *) malloc((length + 1) * sizeof(double));
+    for (int i = 0; i < length; ++i) {
+        newSet[i] = set[i];
+    }
+    set = newSet;
+}
+
+bool validA() {
+    return true;
+}
+
+int **generatePerturbationVectors(int dim, int m, double w, int t, double *query, double **hashTable) {
+    int counter = 0;
+    int **perturbationSets = (int **) malloc(t * sizeof(int *));
+
+    struct Z *zs = (double*)malloc(2*m*sizeof(double));
+
+    for (int i = 0; i < m; ++i) {
+        zs[i].x = distanceToBoundary(dim, w, query, hashTable[i], -1);
+        zs[i].i = i;
+        zs[i].r = -1;
+        zs[i+m].x = distanceToBoundary(dim, w, query, hashTable[i], 1);
+        zs[i+m].i = i;
+        zs[i+m].r = 1;
+    }
+
+    for (int i = 0; i < 2*m; ++i) {
+        for (int j = i+1; j < 2 * m; ++j) {
+            if (zs[i].x > zs[j].x) {
+                struct Z temp = zs[i];
+                zs[i] = zs[j];
+                zs[j] = temp;
+            }
+        }
+    }
+
+    //Pi j is the pair of i and r at index j
+
+    //todo: write struct for A
+    double *A = (double*)malloc(sizeof(double));
+    A[0] = 1;
+    int ALength = 1;
+
+    for (int i = 0; i < t; ++i) {
+        while(1) {
+            if(validA())
+                break;
+        }
+    }
+
+
+    return perturbationSets;
+}
+
+
+double *
+lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
+           double *data) {
     double **queryHashValue = calculateHashValues(dim, l, m, w, hashTables, query);
 
-    int **pertubationVector = (int **)malloc(3 * sizeof(int *));
+    int **perturbationVector = (int **) malloc(3 * sizeof(int *));
 
-    for (int i = 0; i < 3; ++i)
-    {
-        pertubationVector[i] = (int *)malloc(m * sizeof(double));
-        switch (i)
-        {
-        case 0:
-            for (int j = 0; j < m; ++j)
-                pertubationVector[i][j] = -1;
-            break;
-        case 1:
-            for (int j = 0; j < m; ++j)
-                pertubationVector[i][j] = 0;
-            break;
-        case 2: 
-            for (int j = 0; j < m; ++j)
-                pertubationVector[i][j] = 1;
+    for (int i = 0; i < 3; ++i) {
+        perturbationVector[i] = (int *) malloc(m * sizeof(double));
+        switch (i) {
+            case 0:
+                for (int j = 0; j < m; ++j)
+                    perturbationVector[i][j] = -1;
+                break;
+            case 1:
+                for (int j = 0; j < m; ++j)
+                    perturbationVector[i][j] = 0;
+                break;
+            case 2:
+                for (int j = 0; j < m; ++j)
+                    perturbationVector[i][j] = 1;
+            default:
+                //do nothing
+                break;
         }
     }
 
     HashBucket *ite = buckets;
     LinkedList *currentBucketHead = NULL;
 
-    while (ite != NULL)
-    {
-        if (compareHashValues(l, m, queryHashValue, ite->hashValues))
-        {
+    while (ite != NULL) {
+        if (compareHashValues(l, m, queryHashValue, ite->hashValues)) {
 
             currentBucketHead = ite->head;
             break;
@@ -45,19 +111,16 @@ double *lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTa
         ite = ite->next;
     }
 
-    if (currentBucketHead == NULL)
-    {
+    if (currentBucketHead == NULL) {
         return NULL;
     }
 
     double *result_ptr;
     double shortestDistance = RAND_MAX;
 
-    while (currentBucketHead != NULL)
-    {
+    while (currentBucketHead != NULL) {
         double distance = distanceOfTwoPoints(dim, currentBucketHead->data, query);
-        if (distance < shortestDistance)
-        {
+        if (distance < shortestDistance) {
             shortestDistance = distance;
             result_ptr = currentBucketHead->data;
         }

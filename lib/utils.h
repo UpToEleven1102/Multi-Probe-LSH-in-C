@@ -31,6 +31,10 @@ double distanceOfTwoPoints(int dim, double *point1, double *point2);
 
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
+double scorePerturbationVector(int dim, int m, double w, double *query, double **hashTable, int *vector);
+
+double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r);
+
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc);
 
 double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
