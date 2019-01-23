@@ -6,10 +6,17 @@
 #include <stdlib.h>
 #include "lsh_probing.h"
 
+//struct for value z in first 2-m array
 struct Z {
     double x;
     int i;
     int r;
+};
+
+
+//struct for perturbation sets
+struct A {
+
 };
 
 void shift(int length, double *set) {
