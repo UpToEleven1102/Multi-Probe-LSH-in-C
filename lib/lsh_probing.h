@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-double *expand(int length, const double *set);
+double *expand(int length, double *set);
 
 int **generatePerturbationVectors(int dim, int m, double w, int t, double *query, double **hashTable);
 

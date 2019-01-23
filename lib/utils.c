@@ -55,6 +55,15 @@ double *newUnitVector(int dim) {
     return unitVector;
 }
 
+//bool isEqualArrays(int dim, const double *arr1, const double *arr2) {
+//    for (int i = 0; i < dim; ++i) {
+//        if (arr1[i] != arr2[i])
+//            return false;
+//    }
+//
+//    return true;
+//}
+
 bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
     for (int i = 0; i < l; ++i) {
         for (int j = 0; j < m; ++j) {

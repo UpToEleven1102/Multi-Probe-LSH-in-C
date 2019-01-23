@@ -5,30 +5,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lsh_probing.h"
+#include "data_structure.h"
 
-//struct for value z in first 2-m array
-struct Z {
-    double x;
-    int i;
-    int r;
-};
-
-
-//struct for perturbation sets
-struct A {
-
-};
 
 void shift(int length, double *set) {
     set[length - 1]++;
 }
 
-double *expand(int length, const double *set) {
+double *expand(int length, double *set) {
     double *newSet = (double *) malloc((length + 1) * sizeof(double));
     for (int i = 0; i < length; ++i) {
         newSet[i] = set[i];
     }
-    set = newSet;
+
+    free(set);
+    return newSet;
 }
 
 bool validA() {
@@ -39,7 +30,7 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
     int counter = 0;
     int **perturbationSets = (int **) malloc(t * sizeof(int *));
 
-    struct Z *zs = (double*)malloc(2*m*sizeof(double));
+    struct Z *zs = (struct Z*)malloc(2*m*sizeof(struct Z));
 
     for (int i = 0; i < m; ++i) {
         zs[i].x = distanceToBoundary(dim, w, query, hashTable[i], -1);
@@ -63,9 +54,19 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
     //Pi j is the pair of i and r at index j
 
     //todo: write struct for A
-    double *A = (double*)malloc(sizeof(double));
-    A[0] = 1;
-    int ALength = 1;
+
+    struct Heap heap = {NULL, addHeapLinkedList, removeHeapLinkedList};
+
+    //initialize first perturbation set
+    struct A *head = (struct A*)malloc(sizeof(struct A));
+    head->data = (double*)malloc(sizeof(double));
+    head->next=NULL;
+    head->length = 1;
+    head->data[0] = 1;
+
+    heap.add(&heap, head);
+
+
 
     for (int i = 0; i < t; ++i) {
         while(1) {
@@ -73,7 +74,6 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
                 break;
         }
     }
-
 
     return perturbationSets;
 }
