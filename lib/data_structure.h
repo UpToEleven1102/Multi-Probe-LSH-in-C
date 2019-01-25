@@ -24,9 +24,16 @@ struct A {
 
     void (*calculateScore)(struct A*, struct Z*);
     bool (*isValid)(struct A*, int);
+    struct A* (*shift)(struct A*);
+    struct A* (*expand)(struct A*);
 };
-
 void calculateScoreA(struct A*, struct Z*);
+
+struct A *expandA(struct A *_this);
+
+struct A *shiftA(struct A *_this);
+
+
 bool isValidA(struct A *_this, int twoM);
 
 struct Heap {

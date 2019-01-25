@@ -81,15 +81,6 @@ int main() {
     printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
     double ***hashTables = generateHashTables(*L, *M, dim);
 
-
-
-
-
-
-
-
-
-
     HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data);
 //
 //    printf("hash buckets: \n");
@@ -104,12 +95,7 @@ int main() {
 //    printf("Query point: \n");
 //    printDataSet(dim, 1, query);
 
-
-
-
     generatePerturbationVectors(dim, *M, *W, 5, query, hashTables[0]);
-
-
 
 
 

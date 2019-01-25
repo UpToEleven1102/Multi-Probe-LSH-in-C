@@ -7,25 +7,6 @@
 #include "lsh_probing.h"
 #include "data_structure.h"
 
-
-void shift(int length, double *set) {
-    set[length - 1]++;
-}
-
-double *expand(int length, double *set) {
-    double *newSet = (double *) malloc((length + 1) * sizeof(double));
-    for (int i = 0; i < length; ++i) {
-        newSet[i] = set[i];
-    }
-
-    free(set);
-    return newSet;
-}
-
-bool validA() {
-    return true;
-}
-
 int **generatePerturbationVectors(int dim, int m, double w, int t, double *query, double **hashTable) {
     int counter = 0;
     int **perturbationSets = (int **) malloc(t * sizeof(int *));
@@ -69,10 +50,17 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
 //    head->calculateScore = calculateScoreA;
 //    head->isValid = isValidA;
 
-    heap.add(&heap, &head);
+    heap.add(&heap,&head);
 
 
     for (int i = 0; i < t; ++i) {
+        struct A *topNode = heap.extractMin(&heap);
+
+        //get top node
+        // generate 2 new A sets
+        //output the valid top node.
+        //there is a stoping rule.......?????
+
         while(1) {
             if(validA())
                 break;
@@ -81,7 +69,6 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
 
     return perturbationSets;
 }
-
 
 double *
 lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
@@ -126,7 +113,7 @@ lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, Ha
         return NULL;
     }
 
-    double *result_ptr;
+    double *result_ptr = NULL;
     double shortestDistance = RAND_MAX;
 
     while (currentBucketHead != NULL) {

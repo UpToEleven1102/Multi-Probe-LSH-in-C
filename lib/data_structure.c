@@ -33,6 +33,49 @@ bool isValidA(struct A *_this, int twoM) {
 }
 
 
+struct A *expandA(struct A *_this){
+    struct A *expanded = (struct A*)malloc(sizeof(struct A));
+    expanded->score = 0;
+    expanded->length = _this->length +1;
+    expanded->next = NULL;
+    expanded->calculateScore = calculateScoreA;
+    expanded->isValid = isValidA;
+    expanded->shift = shiftA;
+    expanded->expand = expandA;
+
+    expanded->data = (int*)malloc(_this->length+1 *sizeof(int));
+    for (int i = 0; i < _this->length; ++i) {
+        expanded->data[i] = _this->data[i];
+    }
+    expanded->data[_this->length] = _this->data[_this->length-1]+1;
+
+    return expanded;
+
+}
+
+struct A *shiftA(struct A *_this){
+    int *data = (int *)malloc(_this->length*sizeof(int));
+
+    for (int i = 0; i < _this->length-1; ++i) {
+        data[i] = _this->data[i];
+    }
+
+    data[_this->length - 1] = _this->data[_this->length - 1] +1;
+
+    struct A *shifted = (struct A *)malloc(sizeof(struct A));
+    shifted->data = data;
+    shifted->score = 0;
+    shifted->length = _this->length;
+    shifted->next = NULL;
+    shifted->calculateScore = calculateScoreA;
+    shifted->isValid = isValidA;
+    shifted->shift = shiftA;
+    shifted->expand = expandA;
+
+    return shifted;
+}
+
+
 void calculateScoreA(struct A *_this, struct Z *zs) {
     _this->score = 0;
     for (int i = 0; i < _this->length; ++i) {
@@ -75,18 +118,28 @@ void removeHeapLinkedList(struct Heap *_this, struct A *ele) {
     }
 }
 
+
+//note: get the lowest score of the heap or get the top element
 struct A *extractMinHeapLinkedList(struct Heap *_this) {
-    struct A *minPtr, *ite;
+//    struct A *minPtr, *ite;
+//
+//    ite = _this->head;
+//    minPtr = ite;
+//
+//    while (ite != NULL) {
+//        if(ite->score < minPtr->score) {
+//            minPtr = ite;
+//        }
+//        ite = ite->next;
+//    }
+//
+//    return minPtr;
+    if(_this->head == NULL)
+        return NULL;
 
-    ite = _this->head;
-    minPtr = ite;
+    struct A* topNode = _this->head;
 
-    while (ite != NULL) {
-        if(ite->score < minPtr->score) {
-            minPtr = ite;
-        }
-        ite = ite->next;
-    }
+    _this->head = _this->head->next;
 
-    return minPtr;
+    return topNode;
 }
