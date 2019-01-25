@@ -11,19 +11,19 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
     int counter = 0;
     int **perturbationSets = (int **) malloc(t * sizeof(int *));
 
-    struct Z *zs = (struct Z*)malloc(2*m*sizeof(struct Z));
+    struct Z *zs = (struct Z *) malloc(2 * m * sizeof(struct Z));
 
     for (int i = 0; i < m; ++i) {
         zs[i].x = distanceToBoundary(dim, w, query, hashTable[i], -1);
         zs[i].i = i;
         zs[i].r = -1;
-        zs[i+m].x = distanceToBoundary(dim, w, query, hashTable[i], 1);
-        zs[i+m].i = i;
-        zs[i+m].r = 1;
+        zs[i + m].x = distanceToBoundary(dim, w, query, hashTable[i], 1);
+        zs[i + m].i = i;
+        zs[i + m].r = 1;
     }
 
-    for (int i = 0; i < 2*m; ++i) {
-        for (int j = i+1; j < 2 * m; ++j) {
+    for (int i = 0; i < 2 * m; ++i) {
+        for (int j = i + 1; j < 2 * m; ++j) {
             if (zs[i].x > zs[j].x) {
                 struct Z temp = zs[i];
                 zs[i] = zs[j];
@@ -41,7 +41,7 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
     //initialize first perturbation set
 
 
-    struct A head = {(int[]){1}, 0, 1, NULL, calculateScoreA, isValidA};
+    struct A head = {(int[]) {1}, 0, 1, NULL, calculateScoreA, isValidA, shiftA, expandA};
 //    struct A *head = (struct A*)malloc(sizeof(struct A));
 //    head->data = (double*)malloc(sizeof(double));
 //    head->next=NULL;
@@ -50,10 +50,9 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
 //    head->calculateScore = calculateScoreA;
 //    head->isValid = isValidA;
 
-    heap.add(&heap,&head);
+    heap.add(&heap, &head);
 
-
-    for (int i = 0; i < t; ++i) {
+    while(counter < t) {
         struct A *topNode = heap.extractMin(&heap);
 
         //get top node
@@ -61,9 +60,15 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
         //output the valid top node.
         //there is a stoping rule.......?????
 
-        while(1) {
-            if(validA())
-                break;
+        struct A *shifted = topNode->shift(topNode);
+        struct A *expanded = topNode->expand(topNode);
+
+        heap.add(&heap, shifted);
+        heap.add(&heap, expanded);
+
+        if (topNode.isValid(topNode, 2 * m)) {
+            perturbationSets[counter] = topNode->data;
+            counter++;
         }
     }
 

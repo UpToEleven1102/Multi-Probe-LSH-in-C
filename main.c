@@ -19,6 +19,8 @@
 
 //slides: intuitions wrong: 1-step buckets are not better than 2-step buckets, paper: 1step buckets are not neccessary better than buckets that are 2 steps away
 
+//note: get the lowest score of the heap or get the top element
+
 //construct perturbation vectors in each hashtable??
 
 //know when and what table to apply the perturbation vector to
