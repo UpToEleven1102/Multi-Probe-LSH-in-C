@@ -66,7 +66,7 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
         heap.add(&heap, shifted);
         heap.add(&heap, expanded);
 
-        if (topNode.isValid(topNode, 2 * m)) {
+        if (topNode->isValid(topNode, 2 * m)) {
             perturbationSets[counter] = topNode->data;
             counter++;
         }

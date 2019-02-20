@@ -23,11 +23,7 @@ struct HashBucket {
 typedef struct LinkedList LinkedList;
 typedef struct HashBucket HashBucket;
 
-double* generateDataSet(int dim, int n_data);
-
 void printDataSet(int dim, int n_data, const double *data);
-
-double ***generateHashTables(int l, int m, int dim);
 
 bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2);
 

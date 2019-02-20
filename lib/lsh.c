@@ -18,6 +18,7 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
         head->data = ele;
         head->next = NULL;
         hashBuckets->head = head;
+        hashBuckets->next = NULL;
         return 0;
     }
 

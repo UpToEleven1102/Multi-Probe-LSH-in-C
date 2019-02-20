@@ -27,34 +27,6 @@ double innerProduct(const double *vector1, const double *vector2, int dim) {
     return product;
 }
 
-double *generateDataSet(int dim, int n_data) {
-    double *data = (double *) malloc(sizeof(double) * dim * n_data);
-
-
-    for (int i = 0; i < dim * n_data; ++i) {
-        data[i] = (double) rand() / RAND_MAX;
-    }
-
-    return data;
-}
-
-double *newUnitVector(int dim) {
-    double *unitVector = generateDataSet(dim, 1);
-
-    double vectorLength = 0;
-    for (int i = 0; i < dim; ++i) {
-        vectorLength += unitVector[i] * unitVector[i];
-    }
-
-    vectorLength = sqrt(vectorLength);
-
-    for (int i = 0; i < dim; ++i) {
-        unitVector[i] = unitVector[i] / vectorLength;
-    }
-
-    return unitVector;
-}
-
 //bool isEqualArrays(int dim, const double *arr1, const double *arr2) {
 //    for (int i = 0; i < dim; ++i) {
 //        if (arr1[i] != arr2[i])
@@ -75,15 +47,6 @@ bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
     return true;
 }
 
-double **generateHashTable(int m, int dim) {
-    double **h = (double **) malloc(m * sizeof(double));
-
-    for (int i = 0; i < m; ++i) {
-        h[i] = newUnitVector(dim);
-    }
-
-    return h;
-}
 
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data) {
     double *ele = (double *) malloc(dim * sizeof(double));
@@ -93,16 +56,6 @@ double *getElementAtIndex(int idx, int dim, int n_data, const double *data) {
             ele[i] = data[idx * dim + i];
         }
     return ele;
-}
-
-double ***generateHashTables(int l, int m, int dim) {
-    double ***hashTables = (double ***) malloc(l * sizeof(double **));
-
-    for (int i = 0; i < l; ++i) {
-        hashTables[i] = generateHashTable(m, dim);
-    }
-
-    return hashTables;
 }
 
 void printDataSet(int dim, int n_data, const double *data) {
