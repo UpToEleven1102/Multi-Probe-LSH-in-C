@@ -80,8 +80,8 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
     //comeback and pick this up later
     *M = (int) floor(dim / 2.0);
 
-    *L = *M;
-
+//    *L = *M;
+    *L = 1;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -124,14 +124,33 @@ int main() {
     const int n_data = 1000;
     double *data = (double *) malloc(dim * n_data * sizeof(double));
 
+    double *data2 = (double *) malloc(dim * n_data * sizeof(double));
+
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
+
     char line[1024];
     int counter = 0;
+
+    //data 1
     for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
         const char *tok;
 
         for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
             data[counter] = strtof(tok, NULL);
+            counter++;
+        }
+
+        if (i == n_data)
+            break;
+    }
+
+    //data 2
+    counter = 0;
+    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
+        const char *tok;
+
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+            data2[counter] = strtof(tok, NULL);
             counter++;
         }
 
@@ -152,11 +171,16 @@ int main() {
     double ***hashTables = generateHashTables(*L, *M, dim);
 //    printHashTables(dim, *L, *M, hashTables);
 
-    HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data);
+    HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL);
 
     printf("hash buckets: \n");
+
     printHashBuckets(dim, *L, *M, buckets);
-////
+
+    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
+
+
+
 //    double *query = generateDataSet(dim, 1);
 ////
 ////
@@ -167,18 +191,6 @@ int main() {
 ////    printDataSet(dim, 1, query);
 //
 //    generatePerturbationVectors(dim, *M, *W, 5, query, hashTables[0]);
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 //
 //
 //
@@ -214,25 +226,25 @@ int main() {
 //
 //
     //free pointer variables
-//    HashBucket *ite = buckets;
-//    while (ite != NULL) {
-//        HashBucket *temp = ite;
-//        ite = ite->next;
-//        for (int i = 0; i < *L; ++i) {
-//            free(temp->hashValues[i]);
-//        }
-//        free(temp->hashValues);
-//        LinkedList *listIte = temp->head;
-//
-//        while (listIte != NULL) {
-//            LinkedList *tempListIte = listIte;
-//            listIte = listIte->next;
-//            free(tempListIte->data);
-//            free(tempListIte);
-//        }
-//
-//        free(temp);
-//    }
+    HashBucket *ite = buckets;
+    while (ite != NULL) {
+        HashBucket *temp = ite;
+        ite = ite->next;
+        for (int i = 0; i < *L; ++i) {
+            free(temp->hashValues[i]);
+        }
+        free(temp->hashValues);
+        LinkedList *listIte = temp->head;
+
+        while (listIte != NULL) {
+            LinkedList *tempListIte = listIte;
+            listIte = listIte->next;
+            free(tempListIte->data);
+            free(tempListIte);
+        }
+
+        free(temp);
+    }
 
     for (int i = 0; i < *L; ++i) {
         for (int j = 0; j < *M; ++j) {

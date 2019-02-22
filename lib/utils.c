@@ -107,7 +107,6 @@ double **calculateHashValues(int dim, int l, int m, double w, double ***hashTabl
     return hashValues;
 }
 
-
 void printHashTables(int dim, int l, int m, double ***tables) {
     for (int i = 0; i < l; ++i) {
         printf("table %d \n", i);

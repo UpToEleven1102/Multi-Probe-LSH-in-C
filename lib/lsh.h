@@ -7,8 +7,8 @@
 
 #include "utils.h"
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
+//double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
 
-HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data);
+HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets);
 
 #endif //LSH_PROBING_LSH_H

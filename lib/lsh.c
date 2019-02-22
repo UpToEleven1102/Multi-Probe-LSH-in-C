@@ -48,7 +48,8 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
     return 0;
 }
 
-HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data) {
+HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets) {
+    hashBuckets = buckets;
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
         insert(dim, l, m, w, hashTables, ele);
