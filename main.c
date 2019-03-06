@@ -126,6 +126,8 @@ int main() {
 
     double *data2 = (double *) malloc(dim * n_data * sizeof(double));
 
+    double *data3 = (double *) malloc(dim * n_data * sizeof(double));
+
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
 
     char line[1024];
@@ -158,6 +160,19 @@ int main() {
             break;
     }
 
+    counter = 0;
+    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
+        const char *tok;
+
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+            data3[counter] = strtof(tok, NULL);
+            counter++;
+        }
+
+        if (i == n_data)
+            break;
+    }
+
     fclose(file);
 //    printDataSet(dim, n_data, data);
 
@@ -175,11 +190,24 @@ int main() {
 
     printf("hash buckets: \n");
 
-    printHashBuckets(dim, *L, *M, buckets);
+    int numBuckets = printHashBuckets(dim, *L, *M, buckets);
+
+    printf("number of buckets: %d \n", numBuckets);
+    getchar();
 
     buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
 
+    numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
+    printf("number of buckets: %d \n", numBuckets);
+    getchar();
+
+    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
+
+    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+
+    printf("number of buckets: %d \n", numBuckets);
+    getchar();
 
 //    double *query = generateDataSet(dim, 1);
 ////

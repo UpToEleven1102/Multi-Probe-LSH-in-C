@@ -117,7 +117,7 @@ void printHashTables(int dim, int l, int m, double ***tables) {
     }
 }
 
-void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
+int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
     HashBucket *ite = buckets;
     int counter = 0;
 
@@ -148,4 +148,6 @@ void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
     }
 
     free(ite);
+
+    return counter;
 }
