@@ -128,6 +128,9 @@ int main() {
 
     double *data3 = (double *) malloc(dim * n_data * sizeof(double));
 
+    double *query, *result;
+    query = (double *) malloc(dim * sizeof(double));
+
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
 
     char line[1024];
@@ -137,7 +140,7 @@ int main() {
     for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
         const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
             data[counter] = strtof(tok, NULL);
             counter++;
         }
@@ -151,7 +154,7 @@ int main() {
     for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
         const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
             data2[counter] = strtof(tok, NULL);
             counter++;
         }
@@ -164,13 +167,23 @@ int main() {
     for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
         const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
             data3[counter] = strtof(tok, NULL);
             counter++;
         }
 
         if (i == n_data)
             break;
+    }
+
+    //get a datapoint as a query
+    counter = 0;
+    fscanf(file, "%s", line);
+    const char *tok;
+
+    for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+        query[counter] = strtof(tok, NULL);
+        counter++;
     }
 
     fclose(file);
@@ -180,7 +193,8 @@ int main() {
     int *M = (int *) malloc(sizeof(int));
     double *W = (double *) malloc(sizeof(double));
 
-    initParameters(L, M, W, dim, n_data, data);
+    initParameters(L, M, W, dim, n_data, data
+    );
 //    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
 
     double ***hashTables = generateHashTables(*L, *M, dim);
@@ -195,31 +209,34 @@ int main() {
     printf("number of buckets: %d \n", numBuckets);
     getchar();
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
+// TODO: classify other data sets
+//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
+//
+//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//
+//    printf("number of buckets: %d \n", numBuckets);
+//    getchar();
+//
+//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
+//
+//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//
+//    printf("number of buckets: %d \n", numBuckets);
+//    getchar();
 
-    numBuckets = printHashBuckets(dim, *L, *M, buckets);
-
-    printf("number of buckets: %d \n", numBuckets);
+    printf("Query point: \n");
+    printDataSet(dim, 1, query);
     getchar();
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
+//    //start lsh_probing
+    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
 
-    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+    printf("Result: \n");
+    printDataSet(dim, 1, result);
 
-    printf("number of buckets: %d \n", numBuckets);
-    getchar();
+    generatePerturbationVectors(dim, *M, *W,
+                                5, query, hashTables[0]);
 
-//    double *query = generateDataSet(dim, 1);
-////
-////
-////    //start lsh_probing
-//    double *result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
-////
-////    printf("Query point: \n");
-////    printDataSet(dim, 1, query);
-//
-//    generatePerturbationVectors(dim, *M, *W, 5, query, hashTables[0]);
-//
 //
 //
 //
@@ -253,29 +270,44 @@ int main() {
 ////    printDataSet(dim, n_data, data);
 //
 //
-    //free pointer variables
+//free pointer variables
     HashBucket *ite = buckets;
     while (ite != NULL) {
         HashBucket *temp = ite;
         ite = ite->next;
-        for (int i = 0; i < *L; ++i) {
-            free(temp->hashValues[i]);
+        for (
+                int i = 0;
+                i < *
+                        L;
+                ++i) {
+            free(temp
+                         ->hashValues[i]);
         }
-        free(temp->hashValues);
+        free(temp
+                     ->hashValues);
         LinkedList *listIte = temp->head;
 
         while (listIte != NULL) {
             LinkedList *tempListIte = listIte;
             listIte = listIte->next;
-            free(tempListIte->data);
+            free(tempListIte
+                         ->data);
             free(tempListIte);
         }
 
         free(temp);
     }
 
-    for (int i = 0; i < *L; ++i) {
-        for (int j = 0; j < *M; ++j) {
+    for (
+            int i = 0;
+            i < *
+                    L;
+            ++i) {
+        for (
+                int j = 0;
+                j < *
+                        M;
+                ++j) {
             free(hashTables[i][j]);
         }
         free(hashTables[i]);
