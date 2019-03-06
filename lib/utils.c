@@ -9,6 +9,15 @@
 #include "utils.h"
 
 
+double distanceOfTwoPoints(int dim, double *point1, double *point2) {
+    double distance = 0;
+
+    for (int i = 0; i < dim; ++i) {
+        distance += (point1[i] - point2[i]) * (point1[i] - point2[i]);
+    }
+
+    return sqrt(distance);
+}
 
 double innerProduct(const double *vector1, const double *vector2, int dim) {
     double product = 0;
@@ -18,43 +27,26 @@ double innerProduct(const double *vector1, const double *vector2, int dim) {
     return product;
 }
 
-double *generateDataSet(int dim, int n_data) {
-    double *data = (double *) malloc(sizeof(double) * dim * n_data);
+//bool isEqualArrays(int dim, const double *arr1, const double *arr2) {
+//    for (int i = 0; i < dim; ++i) {
+//        if (arr1[i] != arr2[i])
+//            return false;
+//    }
+//
+//    return true;
+//}
 
-
-    for (int i = 0; i < dim * n_data; ++i) {
-        data[i] = (double) rand() / RAND_MAX;
+bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
+    for (int i = 0; i < l; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (hashValue1[i][j] != hashValue2[i][j])
+                return false;
+        }
     }
 
-    return data;
+    return true;
 }
 
-double *newUnitVector(int dim) {
-    double *unitVector = generateDataSet(dim, 1);
-
-    double vectorLength = 0;
-    for (int i = 0; i < dim; ++i) {
-        vectorLength += unitVector[i] * unitVector[i];
-    }
-
-    vectorLength = sqrt(vectorLength);
-
-    for (int i = 0; i < dim; ++i) {
-        unitVector[i] = unitVector[i] / vectorLength;
-    }
-
-    return unitVector;
-}
-
-double **generateHashTable(int m, int dim) {
-    double **h = (double **) malloc(m * sizeof(double));
-
-    for (int i = 0; i < m; ++i) {
-        h[i] = newUnitVector(dim);
-    }
-
-    return h;
-}
 
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data) {
     double *ele = (double *) malloc(dim * sizeof(double));
@@ -64,16 +56,6 @@ double *getElementAtIndex(int idx, int dim, int n_data, const double *data) {
             ele[i] = data[idx * dim + i];
         }
     return ele;
-}
-
-double ***generateHashTables(int l, int m, int dim) {
-    double ***hashTables = (double ***) malloc(l * sizeof(double **));
-
-    for (int i = 0; i < l; ++i) {
-        hashTables[i] = generateHashTable(m, dim);
-    }
-
-    return hashTables;
 }
 
 void printDataSet(int dim, int n_data, const double *data) {
@@ -86,9 +68,43 @@ void printDataSet(int dim, int n_data, const double *data) {
     }
 }
 
+double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r) {
+    if (r == 0) return 0;
+    double distanceToTheLeft = innerProduct(query, hashFunc, dim) - calculateHashValue(dim, w, query, hashFunc) * w;
+
+    if (r == -1)
+        return distanceToTheLeft;
+    if (r == 1)
+        return w - distanceToTheLeft;
+    return 0;
+
+}
+
+double scorePerturbationVector(int dim, int m, double w, double *query, double **hashTable, int *vector) {
+    double score = 0;
+    for (int i = 0; i < m; ++i) {
+        double distance = distanceToBoundary(dim, w, query, hashTable[i], vector[i]);
+        score += distance * distance;
+    }
+    return score;
+}
+
+
 double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
     double hashValue = innerProduct(ele, hashFunc, dim) / w;
     return floor(hashValue);
+}
+
+double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
+    double **hashValues = (double **) malloc(l * sizeof(double *));
+    for (int i = 0; i < l; ++i) {
+        hashValues[i] = (double *) malloc(m * sizeof(double));
+        for (int j = 0; j < m; ++j) {
+            hashValues[i][j] = calculateHashValue(dim, w, ele, hashTables[i][j]);
+        }
+    }
+
+    return hashValues;
 }
 
 void printHashTables(int dim, int l, int m, double ***tables) {
@@ -101,7 +117,7 @@ void printHashTables(int dim, int l, int m, double ***tables) {
     }
 }
 
-void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
+int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
     HashBucket *ite = buckets;
     int counter = 0;
 
@@ -122,7 +138,7 @@ void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
 
         LinkedList *listIte = ite->head;
 
-        while(listIte != NULL) {
+        while (listIte != NULL) {
             printDataSet(dim, 1, listIte->data);
             listIte = listIte->next;
         }
@@ -132,4 +148,6 @@ void printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
     }
 
     free(ite);
+
+    return counter;
 }
