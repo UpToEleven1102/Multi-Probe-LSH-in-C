@@ -57,3 +57,18 @@ HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTable
 
     return hashBuckets;
 }
+
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
+    double *result = (double*) malloc(dim * sizeof(double));
+    double **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+
+
+    for (int i = 0; i < l; ++i) {
+        free(hashVal[i]);
+    }
+    free(hashVal);
+    return result;
+}
+
+
+

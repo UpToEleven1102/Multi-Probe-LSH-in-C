@@ -198,7 +198,9 @@ int main() {
 //    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
 
     double ***hashTables = generateHashTables(*L, *M, dim);
-//    printHashTables(dim, *L, *M, hashTables);
+    printHashTables(dim, *L, *M, hashTables);
+
+    getchar();
 
     HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL);
 
@@ -229,17 +231,16 @@ int main() {
     getchar();
 
 //    //start lsh_probing
-    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
+//    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
+
+    result = LSH_search(dim, *L, *M, *W, hashTables, buckets, query);
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
 
-    generatePerturbationVectors(dim, *M, *W,
-                                5, query, hashTables[0]);
+//    generatePerturbationVectors(dim, *M, *W,
+//                                5, query, hashTables[0]);
 
-//
-//
-//
 ////    printf("Distance of query to data points in data set: \n");
 //
 //    int closestIdx = 0;

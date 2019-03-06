@@ -11,4 +11,6 @@
 
 HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets);
 
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query);
+
 #endif //LSH_PROBING_LSH_H
