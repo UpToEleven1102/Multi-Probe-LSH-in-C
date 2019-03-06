@@ -45,4 +45,6 @@ void printHashTables(int dim, int l, int m, double ***tables);
 
 int printHashBuckets(int dim, int l, int m, HashBucket *buckets);
 
+int printHashValues(int l, int m, double **hashValue);
+
 #endif //LSH_PROBING_UTILS_H

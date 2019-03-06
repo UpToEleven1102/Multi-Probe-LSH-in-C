@@ -151,3 +151,11 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
 
     return counter;
 }
+
+int printHashValues(int l, int m, double **hashValue) {
+    for (int i = 0; i < l; ++i) {
+        for (int j = 0; j < m; ++j) {
+            printf("%f \n", hashValue[i][j]);
+        }
+    }
+}
