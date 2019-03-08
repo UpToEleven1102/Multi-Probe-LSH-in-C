@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <values.h>
 #include "lib/utils.h"
 #include "lib/lsh.h"
 #include "lib/lsh_probing.h"
@@ -15,6 +16,8 @@
 // hashValue formula   <a.v -b> / w. what is b??
 
 //b = centroid * hash functions??????? data dependent
+
+//W determine how wide the slot is - hi(q) = hash function,  fi(q) = hi(q) * w (without getting floor)
 
 //W is dependent to the number of data points
 
@@ -119,53 +122,34 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
     free(buff);
 }
 
-int readCSVFile(int n_data, double *data, double *data2, double *data3, double *query) {
+double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
+    double **dataSets = (double **) malloc(num_data_sets * sizeof(double *));
+    for (int i = 0; i < num_data_sets; ++i) {
+        dataSets[i] = (double *) malloc(dim * n_data * sizeof(double));
+    }
+
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
 
     char line[1024];
-    int counter = 0;
+    int counter;
 
-    //data 1
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
-        const char *tok;
+    for (int j = 0; j < num_data_sets; ++j) {
+        counter = 0;
+        for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
+            const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
-            data[counter] = strtof(tok, NULL);
-            counter++;
+            for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+                dataSets[j][counter] = strtof(tok, NULL);
+                counter++;
+            }
+
+            if (i == n_data)
+                break;
         }
-
-        if (i == n_data)
-            break;
     }
 
-    //data 2
-    counter = 0;
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
-        const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
-            data2[counter] = strtof(tok, NULL);
-            counter++;
-        }
-
-        if (i == n_data)
-            break;
-    }
-
-    counter = 0;
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
-        const char *tok;
-
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
-            data3[counter] = strtof(tok, NULL);
-            counter++;
-        }
-
-        if (i == n_data)
-            break;
-    }
-
-    //get a datapoint as a query
+    //get a data point as a query
     counter = 0;
     fscanf(file, "%s", line);
     const char *tok;
@@ -176,6 +160,8 @@ int readCSVFile(int n_data, double *data, double *data2, double *data3, double *
     }
 
     fclose(file);
+
+    return dataSets;
 }
 
 int readBinaryFile(int n_data, double *data, double *data2, double *data3, double *query) {
@@ -202,16 +188,13 @@ int main() {
     srand(0);
     const int dim = 29;
     const int n_data = 1000;
-    double *data = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data2 = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data3 = (double *) malloc(dim * n_data * sizeof(double));
+    const int NUM_DATA_SETS = 3;
 
     double *query, *result;
     query = (double *) malloc(dim * sizeof(double));
 
-    readCSVFile(n_data, data, data2, data3, query);
+    double **dataSets = readCSVFile(n_data, n_data, NUM_DATA_SETS, query);
+    double *data = dataSets[0];
 
 //    readBinaryFile(n_data, data, data2, data3, query);
 
@@ -269,7 +252,7 @@ int main() {
 //    printf("Distance of query to data points in data set: \n");
 
     int closestIdx = 0;
-    double closestDistance = RAND_MAX;
+    double closestDistance = MAXDOUBLE;
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -277,8 +260,11 @@ int main() {
         if (distance < closestDistance) {
             closestDistance = distance;
             closestIdx = i;
+            for (int j = 0; j < dim; ++j) {
+                result[j] = ele[j];
+            }
         }
-//        printf("data %d: %f \n", i, distance);
+        printf("data %d: %f \n", i, distance);
         free(ele);
     }
 
@@ -287,6 +273,7 @@ int main() {
     } else {
         printf("Closest data point: \n");
         printDataSet(dim, 1, result);
+        closestDistance = distanceOfTwoPoints(dim, query, result);
     }
 
     printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
@@ -297,6 +284,11 @@ int main() {
 
 
 //free pointer variables
+    for (int i = 0; i < NUM_DATA_SETS; ++i) {
+        free(dataSets[i]);
+    }
+    free(dataSets);
+
     HashBucket *ite = buckets;
     while (ite != NULL) {
         HashBucket *temp = ite;

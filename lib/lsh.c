@@ -59,25 +59,42 @@ HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTable
     return hashBuckets;
 }
 
-double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
-    double *result = NULL;
-    int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+double search(int dim, HashBucket *bucket, double *query, double *result) {
+    double distance = MAXDOUBLE;
 
+    LinkedList *data = bucket->head;
+    while (data->next) {
+        double currentDistance = distanceOfTwoPoints(dim, data->data, query);
+        if (distance > currentDistance) {
+            distance = currentDistance;
+            for (int i = 0; i < dim; ++i) {
+                result[i] = data->data[i];
+            }
+        }
+        data = data->next;
+    }
+    printf("Closest distance: %f", distance);
+
+    return distance;
+}
+
+int probing() {
+
+}
+
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
+    double *result = (double *) malloc(sizeof(double) * dim);
+    int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+    double distance = MAXDOUBLE;
 
     HashBucket *ite = buckets;
 
-    double distance = MAXDOUBLE;
     while (ite->next) {
         if (compareHashValues(l, m, hashVal, ite->hashValues)) {
-            LinkedList *data = ite->head;
-            while(data->next) {
-                double currentDistance = distanceOfTwoPoints(dim, data->data, query);
-                if (distance > currentDistance) {
-                    distance = currentDistance;
-                    result = data->data;
-                }
-                data = data->next;
-            }
+            //do probing here
+            double localDistance = search(dim, ite, query, result);
+
+            distance = distance > localDistance? localDistance: distance;
             break;
         }
         ite = ite->next;
@@ -86,6 +103,9 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);
     }
+
+    printf("Closest distance: %f", distance);
+
     free(hashVal);
     return result;
 }
