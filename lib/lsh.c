@@ -79,8 +79,83 @@ double search(int dim, HashBucket *bucket, double *query, double *result) {
     return distance;
 }
 
-double **probing(int numOfVectors, int dim, int l, int m, double w, double *query, double **hashFuncs) {
-    double **perturbationVectors = (double **)malloc(numOfVectors * sizeof(double*));
+//??correct formula
+double calculateScore(const int *a0, int length, struct pairZ zs[]) {
+    double score = 0;
+    for (int i = 0; i < length; ++i) {
+        score += zs[a0[i]].x;
+//        score += zs[a0[i]].x * zs[a0[i]].x;
+    }
+    return score;
+}
+
+struct HeapEle *minHeap(struct HeapEle *heap) {
+    struct HeapEle *ite = heap;
+    struct HeapEle *min = (struct HeapEle*) malloc(sizeof(struct HeapEle));
+    double minScore = MAXDOUBLE;
+    while(ite != NULL) {
+        if (minScore > ite->score) {
+            minScore = ite->score;
+            *min = *ite;
+        }
+        ite = ite->next;
+    }
+
+    //TODO: remove min element
+
+    return min;
+}
+
+bool isValid(struct HeapEle *ele, int twoM) {
+    for (int i = 0; i < ele->length; ++i) {
+        if (ele->data[i] > twoM)
+            return false;
+
+        int negJ = twoM - 1 - ele->data[i];
+        for (int j = 0; j < ele->length; ++j) {
+            if(ele->data[j] == negJ)
+                return false;
+        }
+    }
+    return true;
+}
+
+
+
+struct HeapEle *shiftHeap(struct HeapEle *ele, struct pairZ *zs) {
+    int *data = (int *)malloc(ele->length*sizeof(int));
+
+    for (int i = 0; i < ele->length-1; ++i) {
+        data[i] = ele->data[i];
+    }
+
+    data[ele->length - 1] = ele->data[ele->length - 1] +1;
+
+    struct HeapEle *shifted = (struct HeapEle *)malloc(sizeof(struct HeapEle));
+    shifted->data = data;
+    shifted->score = calculateScore(data, ele->length, zs);
+    shifted->length = ele->length;
+    shifted->next = NULL;
+    shifted->prev = NULL;
+
+    return shifted;
+}
+
+struct HeapEle *expandHeap(struct HeapEle *ele, struct pairZ *zs) {
+    struct HeapEle *expanded = (struct HeapEle*)malloc(sizeof(struct HeapEle));
+    expanded->data = (int*)malloc(ele->length+1 *sizeof(int));
+    for (int i = 0; i < ele->length; ++i) {
+        expanded->data[i] = ele->data[i];
+    }
+    expanded->data[ele->length] = ele->data[ele->length-1]+1;
+    expanded->length = ele->length +1;
+    expanded->score = calculateScore(expanded->data, expanded->length, zs);
+    expanded->next = NULL;
+    expanded->prev = NULL;
+    return expanded;
+}
+int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, double **hashFuncs) {
+    int **perturbationVectors = (int **)malloc(numOfVectors * sizeof(int*));
     //find 2M array
     struct pairZ twoM[2*m];
 
@@ -106,27 +181,37 @@ double **probing(int numOfVectors, int dim, int l, int m, double w, double *quer
         }
     }
 
+    for (int i = 0; i < 2 * m; ++i) {
+        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+    }
+
     //generate Heap
-//    struct PerturVector *a0 = &(struct PerturVector){.data = 0, .score = 0, .length = 1, .next = NULL, .prev = NULL, .calculateScore = calculateScoreA, .isValid = isValidA, .shift = shiftA, .expand = expandA};
-//    a0 ->calculateScore(a0, twoM);
-//    struct Heap *heap = &(struct Heap){.head = a0, .add = addHeapLinkedList, .remove = removeHeapLinkedList, .extractMin = extractMinHeapLinkedList};
+    int *a0 = (int*) malloc(sizeof(int));
+    a0[0] = 0;
+    struct HeapEle *heap = &(struct HeapEle){.data = a0, .length= 1, .score = calculateScore(a0, 1, twoM), .next = NULL, .prev = NULL};
 
     //generate perturbation vectors
-//    for (int i = 0; i < numOfVectors; ++i) {
-//        perturbationVectors[i] = (double*) malloc(dim * sizeof(double));
-//        struct PerturVector *minA;
-//        do {
-//            minA = heap.extractMin(&heap);
-//            struct PerturVector *shifted = minA->shift(minA);
-//            shifted->calculateScore(shifted, twoM);
-//            heap.add(&heap, shifted);
-//            struct PerturVector *expanded = minA->expand(minA);
-//            expanded->calculateScore(expanded, twoM);
-//            heap.add(&heap, expanded);
-//        } while(!minA->isValid(minA, 2*m));
-//
-//        //extract minA to perturbationVectors[i]
-//    }
+    for (int i = 0; i < numOfVectors; ++i) {
+        struct HeapEle *minA;
+        do {
+            minA = minHeap(heap);
+            struct HeapEle *shifted = shiftHeap(minA, twoM);
+
+            shifted->next = heap;
+            heap->prev = shifted;
+            heap = shifted;
+
+            struct HeapEle *expanded = expandHeap(minA, twoM);
+
+            expanded->next = heap;
+            heap->prev = expanded;
+            heap = expanded;
+        } while (!isValid(minA, 2 * m));
+        perturbationVectors[i] = (int*) malloc(m* sizeof(int));
+        for (int j = 0; j < minA->length; ++j) {
+            perturbationVectors[i][twoM[minA->data[j]].i] = twoM[minA->data[j]].r;
+        }
+    }
 
     return perturbationVectors;
 }
@@ -143,10 +228,12 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
         if (compareHashValues(l, m, hashVal, ite->hashValues)) {
             //do probing here
 
-            double **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
+            int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
             double localDistance = search(dim, ite, query, result);
             distance = distance > localDistance? localDistance: distance;
+
+            //add perturVectors to hashVal => go through bucket to find the bucket again
             break;
         }
         ite = ite->next;

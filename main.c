@@ -284,10 +284,10 @@ int main() {
 
 
 //free pointer variables
-    for (int i = 0; i < NUM_DATA_SETS; ++i) {
-        free(dataSets[i]);
-    }
-    free(dataSets);
+//    for (int i = 0; i < NUM_DATA_SETS; ++i) {
+//        free(dataSets[i]);
+//    }
+//    free(dataSets);
 
     HashBucket *ite = buckets;
     while (ite != NULL) {
