@@ -7,8 +7,6 @@
 
 #include "utils.h"
 
-double *expand(int length, double *set);
-
 int **generatePerturbationVectors(int dim, int m, double w, int t, double *query, double **hashTable);
 
 double *lshProbing(int dim, int n_data, int l, int m, double w, double*** hashTables, HashBucket *buckets, double *query, double *data);

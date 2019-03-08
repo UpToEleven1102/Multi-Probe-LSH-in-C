@@ -7,7 +7,7 @@
 #include "data_structure.h"
 #include "utils.h"
 
-bool isEqualStructA(struct A *_A1, struct A *_A2) {
+bool isEqualStructA(struct PerturVector *_A1, struct PerturVector *_A2) {
     if (_A1->length != _A2->length)
         return false;
     for (int i = 0; i < _A1->length; ++i) {
@@ -18,12 +18,12 @@ bool isEqualStructA(struct A *_A1, struct A *_A2) {
     return true;
 }
 
-bool isValidA(struct A *_this, int twoM) {
+bool isValidA(struct PerturVector *_this, int twoM) {
     for (int i = 0; i < _this->length; ++i) {
         if (_this->data[i] > twoM)
             return false;
 
-        int negJ = twoM +1 -_this->data[i];
+        int negJ = twoM - 1 -_this->data[i];
         for (int j = 0; j < _this->length; ++j) {
             if(_this->data[j] == negJ)
                 return false;
@@ -33,8 +33,8 @@ bool isValidA(struct A *_this, int twoM) {
 }
 
 
-struct A *expandA(struct A *_this){
-    struct A *expanded = (struct A*)malloc(sizeof(struct A));
+struct PerturVector *expandA(struct PerturVector *_this){
+    struct PerturVector *expanded = (struct PerturVector*)malloc(sizeof(struct PerturVector));
     expanded->score = 0;
     expanded->length = _this->length +1;
     expanded->next = NULL;
@@ -53,7 +53,7 @@ struct A *expandA(struct A *_this){
 
 }
 
-struct A *shiftA(struct A *_this){
+struct PerturVector *shiftA(struct PerturVector *_this){
     int *data = (int *)malloc(_this->length*sizeof(int));
 
     for (int i = 0; i < _this->length-1; ++i) {
@@ -62,11 +62,12 @@ struct A *shiftA(struct A *_this){
 
     data[_this->length - 1] = _this->data[_this->length - 1] +1;
 
-    struct A *shifted = (struct A *)malloc(sizeof(struct A));
+    struct PerturVector *shifted = (struct PerturVector *)malloc(sizeof(struct PerturVector));
     shifted->data = data;
     shifted->score = 0;
     shifted->length = _this->length;
     shifted->next = NULL;
+    shifted->prev = NULL;
     shifted->calculateScore = calculateScoreA;
     shifted->isValid = isValidA;
     shifted->shift = shiftA;
@@ -76,7 +77,7 @@ struct A *shiftA(struct A *_this){
 }
 
 
-void calculateScoreA(struct A *_this, struct Z *zs) {
+void calculateScoreA(struct PerturVector *_this, struct pairZ *zs) {
     _this->score = 0;
     for (int i = 0; i < _this->length; ++i) {
         _this->score += zs[_this->data[i]].x * zs[_this->data[i]].x;
@@ -84,17 +85,18 @@ void calculateScoreA(struct A *_this, struct Z *zs) {
 }
 
 
-void addHeapLinkedList(struct Heap *_this, struct A *ele) {
+void addHeapLinkedList(struct Heap *_this, struct PerturVector *ele) {
     if (_this->head == NULL) {
         _this->head = ele;
     } else {
+        _this->head->prev = ele;
         ele->next = _this->head;
         _this->head = ele;
     }
 }
 
-void removeHeapLinkedList(struct Heap *_this, struct A *ele) {
-    struct A *ite = _this->head;
+void removeHeapLinkedList(struct Heap *_this, struct PerturVector *ele) {
+    struct PerturVector *ite = _this->head;
 
     if (isEqualStructA(ite, ele)) {
         _this->head = _this->head->next;
@@ -106,7 +108,7 @@ void removeHeapLinkedList(struct Heap *_this, struct A *ele) {
 
     while (ite->next != NULL) {
         if (isEqualStructA(ite->next, ele)) {
-            struct A *prev = ite->next;
+            struct PerturVector *prev = ite->next;
             ite->next = ite->next->next;
 
             free(prev->data);
@@ -120,26 +122,30 @@ void removeHeapLinkedList(struct Heap *_this, struct A *ele) {
 
 
 //note: get the lowest score of the heap or get the top element
-struct A *extractMinHeapLinkedList(struct Heap *_this) {
-//    struct A *minPtr, *ite;
-//
-//    ite = _this->head;
-//    minPtr = ite;
-//
-//    while (ite != NULL) {
-//        if(ite->score < minPtr->score) {
-//            minPtr = ite;
-//        }
-//        ite = ite->next;
-//    }
-//
-//    return minPtr;
-    if(_this->head == NULL)
-        return NULL;
+struct PerturVector *extractMinHeapLinkedList(struct Heap *_this) {
+    struct PerturVector *minPtr, *ite;
 
-    struct A* topNode = _this->head;
+    ite = _this->head;
+    minPtr = ite;
 
-    _this->head = _this->head->next;
+    while (ite != NULL) {
+        if(ite->score < minPtr->score) {
+            minPtr = ite;
+        }
+        ite = ite->next;
+    }
 
-    return topNode;
+    minPtr->prev->next = minPtr->next;
+    minPtr->next->prev = minPtr->prev;
+    minPtr->next = NULL;
+    minPtr->prev = NULL;
+    return minPtr;
+//    if(_this->head == NULL)
+//        return NULL;
+//
+//    struct PerturVector* topNode = _this->head;
+//
+//    _this->head = _this->head->next;
+//
+//    return topNode;
 }
