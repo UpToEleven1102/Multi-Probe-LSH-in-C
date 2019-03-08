@@ -26,6 +26,7 @@
 
 //know when and what table to apply the perturbation vector to
 
+//what if there is no collision
 
 double *generateDataSet(int dim, int n_data) {
     double *data = (double *) malloc(sizeof(double) * dim * n_data);
@@ -110,7 +111,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
         }
     }
 
-    *W = maxDistance / 2;
+    *W = maxDistance / 3;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -200,8 +201,6 @@ int main() {
     double ***hashTables = generateHashTables(*L, *M, dim);
     printHashTables(dim, *L, *M, hashTables);
 
-    getchar();
-
     HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL);
 
     printf("hash buckets: \n");
@@ -209,7 +208,6 @@ int main() {
     int numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
     printf("number of buckets: %d \n", numBuckets);
-    getchar();
 
 // TODO: classify other data sets
 //    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
@@ -228,7 +226,6 @@ int main() {
 
     printf("Query point: \n");
     printDataSet(dim, 1, query);
-    getchar();
 
 //    //start lsh_probing
 //    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
@@ -237,40 +234,41 @@ int main() {
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
+    getchar();
 
 //    generatePerturbationVectors(dim, *M, *W,
 //                                5, query, hashTables[0]);
 
-////    printf("Distance of query to data points in data set: \n");
-//
-//    int closestIdx = 0;
-//    double closestDistance = RAND_MAX;
-//
-//    for (int i = 0; i < n_data; ++i) {
-//        double *ele = getElementAtIndex(i, dim, n_data, data);
-//        double distance = distanceOfTwoPoints(dim, query, ele);
-//        if (distance < closestDistance) {
-//            closestDistance = distance;
-//            closestIdx = i;
-//        }
-////        printf("data %d: %f \n", i, distance);
-//        free(ele);
-//    }
-//
-//    if (result == NULL) {
-//        printf("result = NULL");
-//    } else {
-//        printf("Closest data point: \n");
-//        printDataSet(dim, 1, result);
-//    }
-//
-//    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
-//
-//    //verify variables
-////    printHashTables(dim, *L, *M, hashTables);
-////    printDataSet(dim, n_data, data);
-//
-//
+//    printf("Distance of query to data points in data set: \n");
+
+    int closestIdx = 0;
+    double closestDistance = RAND_MAX;
+
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        double distance = distanceOfTwoPoints(dim, query, ele);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIdx = i;
+        }
+//        printf("data %d: %f \n", i, distance);
+        free(ele);
+    }
+
+    if (result == NULL) {
+        printf("result = NULL");
+    } else {
+        printf("Closest data point: \n");
+        printDataSet(dim, 1, result);
+    }
+
+    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
+
+    //verify variables
+//    printHashTables(dim, *L, *M, hashTables);
+//    printDataSet(dim, n_data, data);
+
+
 //free pointer variables
     HashBucket *ite = buckets;
     while (ite != NULL) {

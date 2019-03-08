@@ -10,7 +10,7 @@
 HashBucket *hashBuckets = NULL;
 
 int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
-    double **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
+    int **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
 
     if (hashBuckets == NULL) {
         hashBuckets = (HashBucket *) malloc(sizeof(HashBucket));
@@ -60,8 +60,9 @@ HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTable
 }
 
 double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
-    double *result = (double *) malloc(dim * sizeof(double));
-    double **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+    double *result = NULL;
+    int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+
 
     HashBucket *ite = buckets;
 

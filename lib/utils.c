@@ -36,7 +36,7 @@ double innerProduct(const double *vector1, const double *vector2, int dim) {
 //    return true;
 //}
 
-bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2) {
+bool compareHashValues(int l, int m, int **hashValue1, int **hashValue2) {
     for (int i = 0; i < l; ++i) {
         for (int j = 0; j < m; ++j) {
             if (hashValue1[i][j] != hashValue2[i][j])
@@ -90,17 +90,16 @@ double scorePerturbationVector(int dim, int m, double w, double *query, double *
 }
 
 
-double calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
-    double hashValue = innerProduct(ele, hashFunc, dim) / w;
-    return floor(hashValue);
+int calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
+    return (int) (innerProduct(ele, hashFunc, dim)/ w);
 }
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
-    double **hashValues = (double **) malloc(l * sizeof(double *));
+int **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
+    int **hashValues = (int **) malloc(l * sizeof(int *));
     for (int i = 0; i < l; ++i) {
-        hashValues[i] = (double *) malloc(m * sizeof(double));
+        hashValues[i] = (int *) malloc(m * sizeof(int));
         for (int j = 0; j < m; ++j) {
-            hashValues[i][j] = calculateHashValue(dim, w, ele, hashTables[i][j]);
+            hashValues[i][j] = (int) (innerProduct(ele, hashTables[i][j], dim) / w);
         }
     }
 
@@ -129,7 +128,7 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
         for (int i = 0; i < l; ++i) {
             printf("Table %d -- \n", i);
             for (int j = 0; j < m; ++j) {
-                printf("e %f \n", ite->hashValues[i][j]);
+                printf("e %d \n", ite->hashValues[i][j]);
             }
         }
 

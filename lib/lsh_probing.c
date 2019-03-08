@@ -78,7 +78,7 @@ int **generatePerturbationVectors(int dim, int m, double w, int t, double *query
 double *
 lshProbing(int dim, int n_data, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
            double *data) {
-    double **queryHashValue = calculateHashValues(dim, l, m, w, hashTables, query);
+    int **queryHashValue = calculateHashValues(dim, l, m, w, hashTables, query);
 
     int **perturbationVector = (int **) malloc(3 * sizeof(int *));
 

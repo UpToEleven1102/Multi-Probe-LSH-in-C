@@ -33,14 +33,13 @@ struct A *expandA(struct A *_this);
 
 struct A *shiftA(struct A *_this);
 
-
 bool isValidA(struct A *_this, int twoM);
 
 struct Heap {
     struct A *head;
     void (*add)(struct Heap*, struct A*);
     void (*remove)(struct Heap*, struct A*);
-    struct A* (*extractMin)(struct Heap*)
+    struct A* (*extractMin)(struct Heap*);
 };
 
 void addHeapLinkedList(struct Heap*, struct A*);
