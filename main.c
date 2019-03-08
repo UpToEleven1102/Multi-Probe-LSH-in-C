@@ -119,19 +119,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
     free(buff);
 }
 
-int main() {
-    srand(0);
-    const int dim = 29;
-    const int n_data = 1000;
-    double *data = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data2 = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data3 = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *query, *result;
-    query = (double *) malloc(dim * sizeof(double));
-
+int readCSVFile(int n_data, double *data, double *data2, double *data3, double *query) {
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
 
     char line[1024];
@@ -188,6 +176,45 @@ int main() {
     }
 
     fclose(file);
+}
+
+int readBinaryFile(int n_data, double *data, double *data2, double *data3, double *query) {
+    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
+
+    char line[1024];
+    int counter = 0;
+
+    //data 1
+    for (int i = 0; (fread(line, sizeof(line), 1, file) == 1); ++i) {
+        const char *tok;
+
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+            data[counter] = strtof(tok, NULL);
+            counter++;
+        }
+
+        if (i == n_data)
+            break;
+    }
+}
+
+int main() {
+    srand(0);
+    const int dim = 29;
+    const int n_data = 1000;
+    double *data = (double *) malloc(dim * n_data * sizeof(double));
+
+    double *data2 = (double *) malloc(dim * n_data * sizeof(double));
+
+    double *data3 = (double *) malloc(dim * n_data * sizeof(double));
+
+    double *query, *result;
+    query = (double *) malloc(dim * sizeof(double));
+
+    readCSVFile(n_data, data, data2, data3, query);
+
+//    readBinaryFile(n_data, data, data2, data3, query);
+
 //    printDataSet(dim, n_data, data);
 
     int *L = (int *) malloc(sizeof(int));
