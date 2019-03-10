@@ -240,7 +240,7 @@ int main() {
 //    //start lsh_probing
 //    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
 
-    result = LSH_search(dim, *L, *M, *W, hashTables, buckets, query);
+    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query);
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
