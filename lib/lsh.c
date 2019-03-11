@@ -264,9 +264,24 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
     return perturbationVectors;
 }
 
-double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int** perturVectors) {
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int** perturVectors, int num_vectors) {
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
-    const int NUM_VECTORS = 10;
+
+    int ***probingHashVals = (int ***)malloc(num_vectors * sizeof(int**));
+    for (int i = 0; i < num_vectors; ++i) {
+        printf("pertur vector %d \n", i);
+        probingHashVals[i] = (int **)malloc(l*sizeof(int*));
+        for (int j = 0; j < l; ++j) {
+            probingHashVals[i][j] = (int *)malloc(m* sizeof(int));
+            for (int k = 0; k < m; ++k) {
+                probingHashVals[i][j][k] = perturVectors[i][k] + hashVal[j][k];
+
+                printf("%d + %d = %d \n", perturVectors[i][k], hashVal[j][k], probingHashVals[i][j][k]);
+            }
+        }
+    }
+
+    getchar();
 
     HashBucket *ite = buckets;
 
@@ -283,7 +298,6 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
 }
 
 double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
-//    double *result = (double *) malloc(sizeof(double) * dim);
     double *result;
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
     double distance = MAXDOUBLE;
@@ -291,7 +305,7 @@ double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashB
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
-    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors);
+    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS);
 
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);
@@ -302,6 +316,3 @@ double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashB
     getchar();
     return result;
 }
-
-
-
