@@ -80,9 +80,10 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
         for (int i = 0; i < dim; ++i) {
             result_ptr[i] = result[i];
         }
+        minDistance = distance;
     }
 
-    return distance;
+    return minDistance;
 }
 
 //??correct formula
@@ -272,7 +273,7 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
 
 double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
                    int **perturVectors, int num_vectors) {
-    double distance;
+    double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
@@ -301,10 +302,26 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
             }
             free(hashVal);
             distance = search(dim, ite, query, MAXDOUBLE, result);
-
+            break;
         }
         ite = ite->next;
     }
+
+    for (int i = 0; i < num_vectors; ++i) {
+        while (ite != NULL) {
+            if (compareHashValues(l, m, probingHashVals[i], ite->hashValues)) {
+                for (int i = 0; i < l; ++i) {
+                    free(hashVal[i]);
+                }
+                free(hashVal);
+                distance = search(dim, ite, query, distance, result);
+                break;
+            }
+            ite = ite->next;
+        }
+    }
+    printf("Closest distance: %f",distance);
+
     return result;
 }
 
@@ -322,7 +339,7 @@ double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashB
         free(hashVal[i]);
     }
 
-    printf("Closest distance: %f", distanceOfTwoPoints(dim, result, query));
+//    printf("Closest distance: %f", distanceOfTwoPoints(dim, result, query));
     free(hashVal);
     getchar();
     return result;
