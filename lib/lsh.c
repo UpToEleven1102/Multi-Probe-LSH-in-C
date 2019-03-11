@@ -266,7 +266,7 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
     free(heap->data);
     free(heap);
 
-    getchar();
+//    getchar();
 
     return perturbationVectors;
 }
@@ -292,7 +292,7 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
         }
     }
 
-    getchar();
+//    getchar();
 
     HashBucket *ite = buckets;
 
@@ -307,6 +307,8 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
         }
         ite = ite->next;
     }
+
+    printf("Closest distance b4 probing: %f \n", distance);
 
     for (int i = 0; i < num_vectors; ++i) {
         ite = buckets;

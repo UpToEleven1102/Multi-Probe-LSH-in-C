@@ -7,7 +7,6 @@
 #include <values.h>
 #include "lib/utils.h"
 #include "lib/lsh.h"
-#include "lib/lsh_probing.h"
 
 //TODO: more research about number L and M, how many are needed
 //TODO: implement b
@@ -219,7 +218,7 @@ int main() {
 
     int numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
-    printf("number of buckets: %d \n", numBuckets);
+    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
     getchar();
 // TODO: classify other data sets
