@@ -80,7 +80,7 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
         for (int i = 0; i < dim; ++i) {
             result_ptr[i] = result[i];
         }
-        minDistance = distance;
+        return distance;
     }
 
     return minDistance;
@@ -90,8 +90,8 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
 double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     double score = 0;
     for (int i = 0; i < length; ++i) {
-        score += zs[a0[i]].x;
-//        score += zs[a0[i]].x * zs[a0[i]].x;
+//        score += zs[a0[i]].x;
+        score += zs[a0[i]].x * zs[a0[i]].x;
     }
     return score;
 }
@@ -309,12 +309,15 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
     }
 
     for (int i = 0; i < num_vectors; ++i) {
+        ite = buckets;
         while (ite != NULL) {
             if (compareHashValues(l, m, probingHashVals[i], ite->hashValues)) {
-                for (int i = 0; i < l; ++i) {
-                    free(hashVal[i]);
+//                printf("search \n");
+//                getchar();
+                for (int j = 0; j < l; ++j) {
+                    free(probingHashVals[i][j]);
                 }
-                free(hashVal);
+                free(probingHashVals[i]);
                 distance = search(dim, ite, query, distance, result);
                 break;
             }

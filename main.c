@@ -114,7 +114,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
         }
     }
 
-    *W = maxDistance;
+    *W = maxDistance*1.2;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
