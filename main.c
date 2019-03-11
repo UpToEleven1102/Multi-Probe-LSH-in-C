@@ -114,7 +114,7 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
         }
     }
 
-    *W = maxDistance / 3;
+    *W = maxDistance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -193,12 +193,14 @@ int main() {
     double *query, *result;
     query = (double *) malloc(dim * sizeof(double));
 
-    double **dataSets = readCSVFile(n_data, n_data, NUM_DATA_SETS, query);
-    double *data = dataSets[0];
+//    double **dataSets = readCSVFile(n_data, n_data, NUM_DATA_SETS, query);
+//    double *data = dataSets[0];
 
 //    readBinaryFile(n_data, data, data2, data3, query);
 
 //    printDataSet(dim, n_data, data);
+    double *data = generateDataSet(dim, n_data);
+    query = generateDataSet(dim, 1);
 
     int *L = (int *) malloc(sizeof(int));
     int *M = (int *) malloc(sizeof(int));
@@ -219,6 +221,7 @@ int main() {
 
     printf("number of buckets: %d \n", numBuckets);
 
+    getchar();
 // TODO: classify other data sets
 //    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
 //

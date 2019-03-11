@@ -128,21 +128,21 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
         for (int i = 0; i < l; ++i) {
             printf("Table %d -- \n", i);
             for (int j = 0; j < m; ++j) {
-                printf("e %d \n", ite->hashValues[i][j]);
+                printf("%d \n", ite->hashValues[i][j]);
             }
         }
 
 
         printf("Elements: \n");
 
-        LinkedList *listIte = ite->head;
-
-        while (listIte != NULL) {
-            printDataSet(dim, 1, listIte->data);
-            listIte = listIte->next;
-        }
-
-        free(listIte);
+//        LinkedList *listIte = ite->head;
+//
+//        while (listIte != NULL) {
+//            printDataSet(dim, 1, listIte->data);
+//            listIte = listIte->next;
+//        }
+//
+//        free(listIte);
         ite = ite->next;
     }
 

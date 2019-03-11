@@ -90,8 +90,8 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
 double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     double score = 0;
     for (int i = 0; i < length; ++i) {
-//        score += zs[a0[i]].x;
-        score += zs[a0[i]].x * zs[a0[i]].x;
+        score += zs[a0[i]].x;
+//        score += zs[a0[i]].x * zs[a0[i]].x;
     }
     return score;
 }
@@ -278,6 +278,7 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
 
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
 
+    //convert perturbation vectors
     int ***probingHashVals = (int ***) malloc(num_vectors * sizeof(int **));
     for (int i = 0; i < num_vectors; ++i) {
         printf("pertur vector %d \n", i);
