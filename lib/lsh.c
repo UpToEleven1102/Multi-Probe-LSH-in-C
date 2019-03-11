@@ -89,28 +89,52 @@ double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     return score;
 }
 
-struct HeapEle *minHeap(struct HeapEle *heap) {
-    struct HeapEle *ite = heap;
-    struct HeapEle *min = (struct HeapEle *) malloc(sizeof(struct HeapEle));
+struct HeapEle *minHeap(struct HeapEle **heap) {
+    struct HeapEle *ite = heap[0];
+    struct HeapEle *res = (struct HeapEle *) malloc(sizeof(struct HeapEle));
+    struct HeapEle *min = NULL;
     double minScore = MAXDOUBLE;
     while (ite != NULL) {
         if (minScore > ite->score) {
             minScore = ite->score;
-            *min = *ite;
+            res->length = ite->length;
+            res->next = NULL;
+            res->prev = NULL;
+            res->data = (int *) malloc(res->length * sizeof(int));
+            for (int i = 0; i < res->length; ++i) {
+                res->data[i] = ite->data[i];
+            }
+            res->score = ite->score;
+            min = ite;
         }
         ite = ite->next;
     }
 
-    return min;
+    if (min->next != NULL && min->prev != NULL) {
+        min->prev->next = min->next;
+        min->next->prev = min->prev;
+        min->next = NULL;
+        min->prev = NULL;
+    } else if (min->prev == NULL) {
+        if (heap[0]->next == NULL) {
+            free(heap[0]->data);
+            *heap = NULL;
+        }
+    } else {
+        min->prev->next = NULL;
+        min->prev = NULL;
+    }
+
+    return res;
 }
 
-void insertEleHeap(struct HeapEle *heap, struct HeapEle *ele) {
-    if (heap == NULL) {
-        heap = ele;
+void insertEleHeap(struct HeapEle **heap, struct HeapEle *ele) {
+    if (*heap == NULL) {
+        *heap = ele;
     } else {
-        ele->next = heap;
-        heap->prev = ele;
-        heap = ele;
+        ele->next = *heap;
+        heap[0]->prev = ele;
+        *heap = ele;
     }
 }
 
@@ -203,27 +227,12 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
     for (int i = 0; i < numOfVectors; ++i) {
         struct HeapEle *minA;
         do {
-            minA = minHeap(heap);
-
-            //how to do this inside minHeap
-            if (minA->next != NULL && minA->prev != NULL) {
-                minA->prev->next = minA->next;
-                minA->next->prev = minA->prev;
-                minA->next = NULL;
-                minA->prev = NULL;
-            } else if (minA->prev == NULL) {
-                if (heap->next == NULL){
-                    free(heap->data);
-                }
-            } else {
-                minA->prev->next = NULL;
-                minA->prev = NULL;
-            }
+            minA = minHeap(&heap);
 
             struct HeapEle *shifted = shiftHeap(minA, twoM);
-            insertEleHeap(heap, shifted);
+            insertEleHeap(&heap, shifted);
             struct HeapEle *expanded = expandHeap(minA, twoM);
-            insertEleHeap(heap, expanded);
+            insertEleHeap(&heap, expanded);
         } while (!isValid(minA, 2 * m));
         perturbationVectors[i] = (int *) malloc(m * sizeof(int));
         for (int j = 0; j < minA->length; ++j) {
@@ -241,10 +250,11 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
         }
     }
 
-    while(heap->next != NULL) {
-        free(heap->prev->data);
+    while (heap->next != NULL) {
+        if (heap->prev != NULL)
+            free(heap->prev->data);
         free(heap->prev);
-        heap= heap->next;
+        heap = heap->next;
     }
 //    free(heap->data);
 //    free(heap);
