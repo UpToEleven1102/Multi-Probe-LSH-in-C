@@ -60,9 +60,9 @@ HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTable
     return hashBuckets;
 }
 
-double *search(int dim, HashBucket *bucket, double *query) {
+double search(int dim, HashBucket *bucket, double *query, double minDistance, double *result_ptr) {
     double distance = MAXDOUBLE;
-    double *result = (double*) malloc(dim * sizeof(double));
+    double *result = (double *) malloc(dim * sizeof(double));
 
     LinkedList *data = bucket->head;
     while (data->next) {
@@ -76,7 +76,13 @@ double *search(int dim, HashBucket *bucket, double *query) {
         data = data->next;
     }
 
-    return result;
+    if (distance < minDistance) {
+        for (int i = 0; i < dim; ++i) {
+            result_ptr[i] = result[i];
+        }
+    }
+
+    return distance;
 }
 
 //??correct formula
@@ -264,19 +270,22 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
     return perturbationVectors;
 }
 
-double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int** perturVectors, int num_vectors) {
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
+                   int **perturVectors, int num_vectors) {
+    double distance;
+    double *result = (double *) malloc(dim * sizeof(double));
+
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
 
-    int ***probingHashVals = (int ***)malloc(num_vectors * sizeof(int**));
+    int ***probingHashVals = (int ***) malloc(num_vectors * sizeof(int **));
     for (int i = 0; i < num_vectors; ++i) {
         printf("pertur vector %d \n", i);
-        probingHashVals[i] = (int **)malloc(l*sizeof(int*));
+        probingHashVals[i] = (int **) malloc(l * sizeof(int *));
         for (int j = 0; j < l; ++j) {
-            probingHashVals[i][j] = (int *)malloc(m* sizeof(int));
+            probingHashVals[i][j] = (int *) malloc(m * sizeof(int));
             for (int k = 0; k < m; ++k) {
                 probingHashVals[i][j][k] = perturVectors[i][k] + hashVal[j][k];
-
-                printf("%d + %d = %d \n", perturVectors[i][k], hashVal[j][k], probingHashVals[i][j][k]);
+                printf("%d \n", probingHashVals[i][j][k]);
             }
         }
     }
@@ -285,23 +294,25 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBu
 
     HashBucket *ite = buckets;
 
-    while (ite->next) {
+    while (ite != NULL) {
         if (compareHashValues(l, m, hashVal, ite->hashValues)) {
             for (int i = 0; i < l; ++i) {
                 free(hashVal[i]);
             }
             free(hashVal);
-            return search(dim, ite, query);
+            distance = search(dim, ite, query, MAXDOUBLE, result);
+
         }
         ite = ite->next;
     }
+    return result;
 }
 
 double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
     double *result;
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
     double distance = MAXDOUBLE;
-    const int NUM_VECTORS = 10;
+    const int NUM_VECTORS = 100;
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
