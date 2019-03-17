@@ -193,7 +193,8 @@ struct HeapEle *expandHeap(struct HeapEle *ele, struct pairZ *zs) {
     return expanded;
 }
 
-int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, double **hashFuncs) {
+int **probing(int numOfVectors, int dim, int l, int m, double w,
+                double *query, double **hashFuncs) {
     int **perturbationVectors = (int **) malloc(numOfVectors * sizeof(int *));
     //find 2M array
     struct pairZ twoM[2 * m];
@@ -271,7 +272,8 @@ int **probing(int numOfVectors, int dim, int l, int m, double w, double *query, 
     return perturbationVectors;
 }
 
-double *LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query,
+double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
+                    HashBucket *buckets, double *query,
                    int **perturVectors, int num_vectors) {
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
