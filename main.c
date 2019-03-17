@@ -4,9 +4,9 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <values.h>
 #include "lib/utils.h"
 #include "lib/lsh.h"
-#include "lib/lsh_probing.h"
 
 //TODO: more research about number L and M, how many are needed
 //TODO: implement b
@@ -15,6 +15,8 @@
 // hashValue formula   <a.v -b> / w. what is b??
 
 //b = centroid * hash functions??????? data dependent
+
+//W determine how wide the slot is - hi(q) = hash function,  fi(q) = hi(q) * w (without getting floor)
 
 //W is dependent to the number of data points
 
@@ -26,6 +28,7 @@
 
 //know when and what table to apply the perturbation vector to
 
+//what if there is no collision
 
 double *generateDataSet(int dim, int n_data) {
     double *data = (double *) malloc(sizeof(double) * dim * n_data);
@@ -37,9 +40,43 @@ double *generateDataSet(int dim, int n_data) {
     return data;
 }
 
+double z1;
 
-double *newUnitVector(int dim) {
-    double *unitVector = generateDataSet(dim, 1);
+//phase = 0 or 1 equivalent to z0 and z1
+//Box-Mulller transformation
+double gaussian_rand(double mean, double stdDev, int phase) {
+    const double epsilon = 2.22507e-308;
+    const double two_pi = 2 * M_PI;
+
+    printf("%f \n",epsilon);
+
+    if (phase == 1)
+        return z1 * stdDev + mean;
+
+    double u1, u2;
+    do {
+        u1 = (rand()+1.) / (RAND_MAX + 2.);
+        u2 = rand() / (RAND_MAX+1.);
+    } while (u1 <= epsilon);
+
+    double z0;
+    z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
+    z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
+
+    return z0 * stdDev + mean;
+}
+
+double *newUnitVector(int dim, double *mean, double *stdDev) {
+//    double *unitVector = generateDataSet(dim, 1);
+//
+
+    double *unitVector = (double*) malloc(dim * sizeof(double));
+
+    int phase = 0;
+
+    for (int i = 0; i < dim; ++i) {
+        unitVector[i] = gaussian_rand(mean[i], stdDev[i], phase); phase = 1 - phase;
+    }
 
     double vectorLength = 0;
     for (int i = 0; i < dim; ++i) {
@@ -55,39 +92,32 @@ double *newUnitVector(int dim) {
     return unitVector;
 }
 
-
-double **generateHashTable(int m, int dim) {
-    double **h = (double **) malloc(m * sizeof(double));
-
-    for (int i = 0; i < m; ++i) {
-        h[i] = newUnitVector(dim);
-    }
-
-    return h;
-}
-
-double ***generateHashTables(int l, int m, int dim) {
+double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev) {
     double ***hashTables = (double ***) malloc(l * sizeof(double **));
 
     for (int i = 0; i < l; ++i) {
-        hashTables[i] = generateHashTable(m, dim);
+        hashTables[i] = (double**) malloc(m * sizeof(double*));
+        for (int j = 0; j < m; ++j) {
+            hashTables[i][j] = newUnitVector(dim, mean, stdDev);
+        }
     }
 
     return hashTables;
 }
 
-void initParameters(int *L, int *M, double *W, int dim, int n_data, const double *data) {
+void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data) {
     //comeback and pick this up later
     *M = (int) floor(dim / 2.0);
 
-//    *L = *M;
     *L = 1;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
-        buff[i] = (double *) malloc(2 * sizeof(double));
+        buff[i] = (double *) malloc(3 * sizeof(double));
         buff[i][0] = 0;
         buff[i][1] = RAND_MAX;
+        buff[i][2] = 0;
+        stdDev[i] = 0;
     }
 
     for (int i = 0; i < n_data; ++i) {
@@ -99,18 +129,39 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
             if (ele[j] < buff[j][1]) {
                 buff[j][1] = ele[j];
             }
+            buff[j][2] += ele[j];
         }
         free(ele);
     }
 
     double maxDistance = 0;
     for (int i = 0; i < dim; ++i) {
+        mean[i] = buff[i][2] / n_data;
         if (maxDistance < buff[i][0] - buff[i][1]) {
             maxDistance = buff[i][0] - buff[i][1];
         }
     }
 
-    *W = maxDistance / 2;
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+
+        for (int j = 0; j < dim; ++j) {
+            stdDev[j] = (ele[j] - mean[j]) * (ele[j] - mean[j]);
+        }
+
+        free(ele);
+    }
+
+    double _mean = 0;
+
+    for (int i = 0; i < dim; ++i) {
+        stdDev[i] = sqrt(stdDev[i] / n_data);
+        _mean += mean[i];
+    }
+
+    _mean = _mean / dim;
+
+    *W = _mean/1.5;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -118,26 +169,58 @@ void initParameters(int *L, int *M, double *W, int dim, int n_data, const double
     free(buff);
 }
 
-int main() {
-    srand(0);
-    const int dim = 29;
-    const int n_data = 1000;
-    double *data = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data2 = (double *) malloc(dim * n_data * sizeof(double));
-
-    double *data3 = (double *) malloc(dim * n_data * sizeof(double));
+double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
+    double **dataSets = (double **) malloc(num_data_sets * sizeof(double *));
+    for (int i = 0; i < num_data_sets; ++i) {
+        dataSets[i] = (double *) malloc(dim * n_data * sizeof(double));
+    }
 
     FILE *file = fopen("../data_sets/HIGGS.csv", "rb");
+
+    char line[1024];
+    int counter;
+
+    for (int j = 0; j < num_data_sets; ++j) {
+        counter = 0;
+        for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
+            const char *tok;
+
+            for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+                dataSets[j][counter] = strtof(tok, NULL);
+                counter++;
+            }
+
+            if (i == n_data)
+                break;
+        }
+    }
+
+    //get a data point as a query
+    counter = 0;
+    fscanf(file, "%s", line);
+    const char *tok;
+
+    for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
+        query[counter] = strtof(tok, NULL);
+        counter++;
+    }
+
+    fclose(file);
+
+    return dataSets;
+}
+
+int readBinaryFile(int n_data, double *data, double *data2, double *data3, double *query) {
+    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
     char line[1024];
     int counter = 0;
 
     //data 1
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
+    for (int i = 0; (fread(line, sizeof(line), 1, file) == 1); ++i) {
         const char *tok;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
+        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
             data[counter] = strtof(tok, NULL);
             counter++;
         }
@@ -145,46 +228,38 @@ int main() {
         if (i == n_data)
             break;
     }
+}
 
-    //data 2
-    counter = 0;
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
-        const char *tok;
+int main() {
+    srand(1);
+    const int dim = 29;
+    const int n_data = 1000;
+    const int NUM_DATA_SETS = 3;
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
-            data2[counter] = strtof(tok, NULL);
-            counter++;
-        }
+    double *query, *result;
+    query = (double *) malloc(dim * sizeof(double));
 
-        if (i == n_data)
-            break;
-    }
+    double **dataSets = readCSVFile(n_data, n_data, NUM_DATA_SETS, query);
+    double *data = dataSets[0];
 
-    counter = 0;
-    for (int i = 0; (fscanf(file, "%s", line) == 1); ++i) {
-        const char *tok;
+//    readBinaryFile(n_data, data, data2, data3, query);
 
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")){
-            data3[counter] = strtof(tok, NULL);
-            counter++;
-        }
-
-        if (i == n_data)
-            break;
-    }
-
-    fclose(file);
 //    printDataSet(dim, n_data, data);
+//    double *data = generateDataSet(dim, n_data);
+//    query = generateDataSet(dim, 1);
 
     int *L = (int *) malloc(sizeof(int));
     int *M = (int *) malloc(sizeof(int));
     double *W = (double *) malloc(sizeof(double));
 
-    initParameters(L, M, W, dim, n_data, data);
+    double *mean = (double*) malloc(dim * sizeof(double));
+    double *stdDev = (double*) malloc(dim * sizeof(double));
+
+    initParameters(L, M, W, mean, stdDev, dim, n_data, data);
 //    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
 
-    double ***hashTables = generateHashTables(*L, *M, dim);
-//    printHashTables(dim, *L, *M, hashTables);
+    double ***hashTables = generateHashTables(*L, *M, dim, mean, stdDev);
+    printHashTables(dim, *L, *M, hashTables);
 
     HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL);
 
@@ -192,90 +267,116 @@ int main() {
 
     int numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
-    printf("number of buckets: %d \n", numBuckets);
+    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+
+    getchar();
+// TODO: classify other data sets
+//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
+//
+//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//
+//    printf("number of buckets: %d \n", numBuckets);
+//    getchar();
+//
+//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
+//
+//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//
+//    printf("number of buckets: %d \n", numBuckets);
+//    getchar();
+
+    printf("Query point: \n");
+    printDataSet(dim, 1, query);
+
+//    //start lsh_probing
+//    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
+
+    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query);
+
+    printf("Result: \n");
+    printDataSet(dim, 1, result);
     getchar();
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
+//    generatePerturbationVectors(dim, *M, *W,
+//                                5, query, hashTables[0]);
 
-    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//    printf("Distance of query to data points in data set: \n");
 
-    printf("number of buckets: %d \n", numBuckets);
-    getchar();
+    int closestIdx = 0;
+    double closestDistance = MAXDOUBLE;
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        double distance = distanceOfTwoPoints(dim, query, ele);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIdx = i;
+            for (int j = 0; j < dim; ++j) {
+                result[j] = ele[j];
+            }
+        }
+        printf("data %d: %f \n", i, distance);
+        free(ele);
+    }
 
-    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+    if (result == NULL) {
+        printf("result = NULL");
+    } else {
+        printf("Closest data point: \n");
+        printDataSet(dim, 1, result);
+        closestDistance = distanceOfTwoPoints(dim, query, result);
+    }
 
-    printf("number of buckets: %d \n", numBuckets);
-    getchar();
+    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
 
-//    double *query = generateDataSet(dim, 1);
-////
-////
-////    //start lsh_probing
-//    double *result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
-////
-////    printf("Query point: \n");
-////    printDataSet(dim, 1, query);
-//
-//    generatePerturbationVectors(dim, *M, *W, 5, query, hashTables[0]);
-//
-//
-//
-//
-////    printf("Distance of query to data points in data set: \n");
-//
-//    int closestIdx = 0;
-//    double closestDistance = RAND_MAX;
-//
-//    for (int i = 0; i < n_data; ++i) {
-//        double *ele = getElementAtIndex(i, dim, n_data, data);
-//        double distance = distanceOfTwoPoints(dim, query, ele);
-//        if (distance < closestDistance) {
-//            closestDistance = distance;
-//            closestIdx = i;
-//        }
-////        printf("data %d: %f \n", i, distance);
-//        free(ele);
+    //verify variables
+//    printHashTables(dim, *L, *M, hashTables);
+//    printDataSet(dim, n_data, data);
+
+
+//free pointer variables
+//    for (int i = 0; i < NUM_DATA_SETS; ++i) {
+//        free(dataSets[i]);
 //    }
-//
-//    if (result == NULL) {
-//        printf("result = NULL");
-//    } else {
-//        printf("Closest data point: \n");
-//        printDataSet(dim, 1, result);
-//    }
-//
-//    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
-//
-//    //verify variables
-////    printHashTables(dim, *L, *M, hashTables);
-////    printDataSet(dim, n_data, data);
-//
-//
-    //free pointer variables
+//    free(dataSets);
+
     HashBucket *ite = buckets;
     while (ite != NULL) {
         HashBucket *temp = ite;
         ite = ite->next;
-        for (int i = 0; i < *L; ++i) {
-            free(temp->hashValues[i]);
+        for (
+                int i = 0;
+                i < *
+                        L;
+                ++i) {
+            free(temp
+                         ->hashValues[i]);
         }
-        free(temp->hashValues);
+        free(temp
+                     ->hashValues);
         LinkedList *listIte = temp->head;
 
         while (listIte != NULL) {
             LinkedList *tempListIte = listIte;
             listIte = listIte->next;
-            free(tempListIte->data);
+            free(tempListIte
+                         ->data);
             free(tempListIte);
         }
 
         free(temp);
     }
 
-    for (int i = 0; i < *L; ++i) {
-        for (int j = 0; j < *M; ++j) {
+    for (
+            int i = 0;
+            i < *
+                    L;
+            ++i) {
+        for (
+                int j = 0;
+                j < *
+                        M;
+                ++j) {
             free(hashTables[i][j]);
         }
         free(hashTables[i]);

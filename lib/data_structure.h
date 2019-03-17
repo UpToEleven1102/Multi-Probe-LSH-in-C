@@ -8,7 +8,7 @@
 #include "utils.h"
 
 //struct for value z in first 2-m array
-struct Z {
+struct pairZ {
     double x;
     int i;
     int r;
@@ -16,37 +16,37 @@ struct Z {
 
 
 //linked list struct for perturbation sets
-struct A {
+struct PerturVector {
     int *data;
     double score;
     int length;
-    struct A *next;
+    struct PerturVector *next;
+    struct PerturVector *prev;
 
-    void (*calculateScore)(struct A*, struct Z*);
-    bool (*isValid)(struct A*, int);
-    struct A* (*shift)(struct A*);
-    struct A* (*expand)(struct A*);
+    void (*calculateScore)(struct PerturVector*, struct pairZ*);
+    bool (*isValid)(struct PerturVector*, int);
+    struct PerturVector* (*shift)(struct PerturVector*);
+    struct PerturVector* (*expand)(struct PerturVector*);
 };
-void calculateScoreA(struct A*, struct Z*);
+void calculateScoreA(struct PerturVector*, struct pairZ*);
 
-struct A *expandA(struct A *_this);
+struct PerturVector *expandA(struct PerturVector *_this);
 
-struct A *shiftA(struct A *_this);
+struct PerturVector *shiftA(struct PerturVector *_this);
 
-
-bool isValidA(struct A *_this, int twoM);
+bool isValidA(struct PerturVector *_this, int twoM);
 
 struct Heap {
-    struct A *head;
-    void (*add)(struct Heap*, struct A*);
-    void (*remove)(struct Heap*, struct A*);
-    struct A* (*extractMin)(struct Heap*)
+    struct PerturVector *head;
+    void (*add)(struct Heap*, struct PerturVector*);
+    void (*remove)(struct Heap*, struct PerturVector*);
+    struct PerturVector* (*extractMin)(struct Heap*);
 };
 
-void addHeapLinkedList(struct Heap*, struct A*);
+void addHeapLinkedList(struct Heap*, struct PerturVector*);
 
-void removeHeapLinkedList(struct Heap*, struct A*);
+void removeHeapLinkedList(struct Heap*, struct PerturVector*);
 
-struct A * extractMinHeapLinkedList(struct Heap*);
+struct PerturVector *extractMinHeapLinkedList(struct Heap*);
 
 #endif //LSH_PROBING_DATA_STRUCTURE_H

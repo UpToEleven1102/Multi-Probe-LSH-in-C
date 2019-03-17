@@ -16,7 +16,7 @@ struct LinkedList {
 
 struct HashBucket {
     struct LinkedList *head;
-    double **hashValues;
+    int **hashValues;
     struct HashBucket *next;
 };
 
@@ -25,7 +25,7 @@ typedef struct HashBucket HashBucket;
 
 void printDataSet(int dim, int n_data, const double *data);
 
-bool compareHashValues(int l, int m, double **hashValue1, double **hashValue2);
+bool compareHashValues(int l, int m, int **hashValue1, int **hashValue2);
 
 //bool isEqualArrays(int dim, const double *arr1, const double *arr2);
 
@@ -37,12 +37,14 @@ double scorePerturbationVector(int dim, int m, double w, double *query, double *
 
 double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r);
 
-double calculateHashValue(int dim, double w, double *ele, double *hashFunc);
+int calculateHashValue(int dim, double w, double *ele, double *hashFunc);
 
-double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
+int **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
 
 void printHashTables(int dim, int l, int m, double ***tables);
 
 int printHashBuckets(int dim, int l, int m, HashBucket *buckets);
+
+int printHashValues(int l, int m, double **hashValue);
 
 #endif //LSH_PROBING_UTILS_H
