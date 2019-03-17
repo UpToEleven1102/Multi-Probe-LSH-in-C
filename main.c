@@ -152,11 +152,16 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
         free(ele);
     }
 
+    double _mean = 0;
+
     for (int i = 0; i < dim; ++i) {
         stdDev[i] = sqrt(stdDev[i] / n_data);
+        _mean += mean[i];
     }
 
-    *W = maxDistance/3;
+    _mean = _mean / dim;
+
+    *W = _mean/1.5;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
