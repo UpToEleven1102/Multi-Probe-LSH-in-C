@@ -42,7 +42,7 @@ double *generateDataSet(int dim, int n_data) {
 
 double z1;
 
-//phase = 0 or 1 equivalent to z0 and z1
+//phase = 0 or 1 equivalent to z0 or z1
 //Box-Mulller transformation
 double gaussian_rand(double mean, double stdDev, int phase) {
     const double epsilon = 2.22507e-308;
@@ -266,6 +266,13 @@ int main() {
     printf("hash buckets: \n");
 
     int numBuckets = printHashBuckets(dim, *L, *M, buckets);
+
+    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+
+    getchar();
+
+    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets);
+    numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
