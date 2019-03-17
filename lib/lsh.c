@@ -10,8 +10,8 @@
 
 HashBucket *hashBuckets = NULL;
 
-int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
-    int **hashValues = calculateHashValues(dim, l, m, w, hashTables, ele);
+int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid) {
+    int **hashValues = calculateHashValues(dim, l, m, w ,centroid, hashTables, ele);
 
     if (hashBuckets == NULL) {
         hashBuckets = (HashBucket *) malloc(sizeof(HashBucket));
@@ -50,11 +50,11 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele) {
     return 0;
 }
 
-HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets) {
+HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets, double *centroid) {
     hashBuckets = buckets;
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
-        insert(dim, l, m, w, hashTables, ele);
+        insert(dim, l, m, w, hashTables, ele, centroid);
     }
 
     return hashBuckets;
@@ -274,11 +274,11 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
 
 double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
                     HashBucket *buckets, double *query,
-                   int **perturVectors, int num_vectors) {
+                   int **perturVectors, int num_vectors, double *centroid) {
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
-    int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+    int **hashVal = calculateHashValues(dim, l, m, w, centroid ,hashTables, query);
 
     //convert perturbation vectors
     int ***probingHashVals = (int ***) malloc(num_vectors * sizeof(int **));
@@ -333,14 +333,14 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     return result;
 }
 
-double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS) {
+double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid) {
     double *result;
-    int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
+    int **hashVal = calculateHashValues(dim, l, m, w, centroid, hashTables, query);
     double distance = MAXDOUBLE;
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
-    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS);
+    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS, centroid);
 
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);

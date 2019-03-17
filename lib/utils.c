@@ -95,12 +95,15 @@ int calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
 }
 
 //b = centroid * hash functions??????? data dependent
-int **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele) {
+int **calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele) {
+    double b;
+
     int **hashValues = (int **) malloc(l * sizeof(int *));
     for (int i = 0; i < l; ++i) {
         hashValues[i] = (int *) malloc(m * sizeof(int));
         for (int j = 0; j < m; ++j) {
-            hashValues[i][j] = (int) (innerProduct(ele, hashTables[i][j], dim) / w);
+            b = innerProduct(hashTables[i][j], centroid, dim);
+            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim) + b) / w);
         }
     }
 

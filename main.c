@@ -105,7 +105,7 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
     return hashTables;
 }
 
-void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data) {
+void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data, double *centroid) {
     //comeback and pick this up later
     *M = (int) floor(dim / 2.0);
 
@@ -122,7 +122,10 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
+
         for (int j = 0; j < dim; ++j) {
+            centroid[j] += ele[j];
+
             if (ele[j] > buff[j][0]) {
                 buff[j][0] = ele[j];
             }
@@ -136,6 +139,7 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
 
     double maxDistance = 0;
     for (int i = 0; i < dim; ++i) {
+        centroid[i] /= n_data;
         mean[i] = buff[i][2] / n_data;
         if (maxDistance < buff[i][0] - buff[i][1]) {
             maxDistance = buff[i][0] - buff[i][1];
@@ -161,7 +165,7 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
 
     _mean = _mean / dim;
 
-    *W = _mean;
+    *W = _mean * 1.5;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -237,8 +241,9 @@ int main() {
     const int NUM_DATA_SETS = 3;
     const int NUM_PERTURBATION_VECTORS = 100;
 
-    double *query, *result;
+    double *query, *result, *centroid;
     query = (double *) malloc(dim * sizeof(double));
+    centroid = (double *) calloc(dim, sizeof(double));
 
     double **dataSets = readCSVFile(n_data, dim, NUM_DATA_SETS, query);
     double *data = dataSets[0];
@@ -256,13 +261,13 @@ int main() {
     double *mean = (double*) malloc(dim * sizeof(double));
     double *stdDev = (double*) malloc(dim * sizeof(double));
 
-    initParameters(L, M, W, mean, stdDev, dim, n_data, data);
+    initParameters(L, M, W, mean, stdDev, dim, n_data, data, centroid);
 //    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
 
     double ***hashTables = generateHashTables(*L, *M, dim, mean, stdDev);
     printHashTables(dim, *L, *M, hashTables);
 
-    HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL);
+    HashBucket *buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL, centroid);
 
     printf("hash buckets: \n");
 
@@ -272,7 +277,7 @@ int main() {
 
     getchar();
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets);
+    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets, centroid);
     numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
@@ -285,7 +290,7 @@ int main() {
 //    //start lsh_probing
 //    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
 
-    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query, NUM_PERTURBATION_VECTORS);
+    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query, NUM_PERTURBATION_VECTORS, centroid);
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
