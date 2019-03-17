@@ -333,11 +333,10 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     return result;
 }
 
-double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query) {
+double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS) {
     double *result;
     int **hashVal = calculateHashValues(dim, l, m, w, hashTables, query);
     double distance = MAXDOUBLE;
-    const int NUM_VECTORS = 100;
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 

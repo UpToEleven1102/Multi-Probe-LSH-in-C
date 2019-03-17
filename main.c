@@ -161,7 +161,7 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
 
     _mean = _mean / dim;
 
-    *W = _mean/1.5;
+    *W = _mean;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -235,11 +235,12 @@ int main() {
     const int dim = 29;
     const int n_data = 1000;
     const int NUM_DATA_SETS = 3;
+    const int NUM_PERTURBATION_VECTORS = 100;
 
     double *query, *result;
     query = (double *) malloc(dim * sizeof(double));
 
-    double **dataSets = readCSVFile(n_data, n_data, NUM_DATA_SETS, query);
+    double **dataSets = readCSVFile(n_data, dim, NUM_DATA_SETS, query);
     double *data = dataSets[0];
 
 //    readBinaryFile(n_data, data, data2, data3, query);
@@ -277,20 +278,6 @@ int main() {
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
     getchar();
-// TODO: classify other data sets
-//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data2, buckets);
-//
-//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
-//
-//    printf("number of buckets: %d \n", numBuckets);
-//    getchar();
-//
-//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, data3, buckets);
-//
-//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
-//
-//    printf("number of buckets: %d \n", numBuckets);
-//    getchar();
 
     printf("Query point: \n");
     printDataSet(dim, 1, query);
@@ -298,7 +285,7 @@ int main() {
 //    //start lsh_probing
 //    result = lshProbing(dim, n_data, *L, *M, *W, hashTables, buckets, query, data);
 
-    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query);
+    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, query, NUM_PERTURBATION_VECTORS);
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
