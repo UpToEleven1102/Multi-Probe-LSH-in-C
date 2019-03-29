@@ -330,6 +330,10 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     }
     printf("Closest distance: %f",distance);
 
+    printDataSet(dim, 1, result);
+
+    getchar();
+
     return result;
 }
 

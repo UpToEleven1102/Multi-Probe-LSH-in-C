@@ -42,21 +42,23 @@ double *generateDataSet(int dim, int n_data) {
 
 double z1;
 
+//what mean and deviation that want?
+
 //phase = 0 or 1 equivalent to z0 or z1
 //Box-Mulller transformation
 double gaussian_rand(double mean, double stdDev, int phase) {
     const double epsilon = 2.22507e-308;
     const double two_pi = 2 * M_PI;
 
-    printf("%f \n",epsilon);
+    printf("%f \n", epsilon);
 
     if (phase == 1)
         return z1 * stdDev + mean;
 
     double u1, u2;
     do {
-        u1 = (rand()+1.) / (RAND_MAX + 2.);
-        u2 = rand() / (RAND_MAX+1.);
+        u1 = (rand() + 1.) / (RAND_MAX + 2.);
+        u2 = rand() / (RAND_MAX + 1.);
     } while (u1 <= epsilon);
 
     double z0;
@@ -70,12 +72,13 @@ double *newUnitVector(int dim, double *mean, double *stdDev) {
 //    double *unitVector = generateDataSet(dim, 1);
 //
 
-    double *unitVector = (double*) malloc(dim * sizeof(double));
+    double *unitVector = (double *) malloc(dim * sizeof(double));
 
     int phase = 0;
 
     for (int i = 0; i < dim; ++i) {
-        unitVector[i] = gaussian_rand(mean[i], stdDev[i], phase); phase = 1 - phase;
+        unitVector[i] = gaussian_rand(mean[i], stdDev[i], phase);
+        phase = 1 - phase;
     }
 
     double vectorLength = 0;
@@ -96,7 +99,7 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
     double ***hashTables = (double ***) malloc(l * sizeof(double **));
 
     for (int i = 0; i < l; ++i) {
-        hashTables[i] = (double**) malloc(m * sizeof(double*));
+        hashTables[i] = (double **) malloc(m * sizeof(double *));
         for (int j = 0; j < m; ++j) {
             hashTables[i][j] = newUnitVector(dim, mean, stdDev);
         }
@@ -105,7 +108,8 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
     return hashTables;
 }
 
-void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data, double *centroid) {
+void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data,
+                    double *centroid) {
     //comeback and pick this up later
     *M = (int) floor(dim / 2.0);
 
@@ -214,30 +218,38 @@ double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
     return dataSets;
 }
 
-int readBinaryFile(int n_data, double *data, double *data2, double *data3, double *query) {
+double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
+    double **dataSets = (double **) malloc(num_data_sets * sizeof(double *));
+    for (int i = 0; i < num_data_sets; ++i) {
+        dataSets[i] = (double *) calloc(dim * n_data, sizeof(double));
+    }
+
     FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
     char line[1024];
     int counter = 0;
 
     //data 1
-    for (int i = 0; (fread(line, sizeof(line), 1, file) == 1); ++i) {
-        const char *tok;
-
-        for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",")) {
-            data[counter] = strtof(tok, NULL);
-            counter++;
+    if (file != NULL) {
+        for (int i = 0; i < num_data_sets; ++i) {
+            fread(dataSets[i], sizeof(double), dim * n_data, file);
+            if (feof(file))
+                break;
         }
 
-        if (i == n_data)
-            break;
+        fread(query, sizeof(double), dim, file);
+        fclose(file);
+    } else {
+        printf("Failed to open file. ");
     }
+
+    return dataSets;
 }
 
 int main() {
     srand(1);
-    const int dim = 29;
-    const int n_data = 1000;
+    const int dim = 28;
+    const int n_data = 100000;
     const int NUM_DATA_SETS = 3;
     const int NUM_PERTURBATION_VECTORS = 100;
 
@@ -245,12 +257,15 @@ int main() {
     query = (double *) malloc(dim * sizeof(double));
     centroid = (double *) calloc(dim, sizeof(double));
 
-    double **dataSets = readCSVFile(n_data, dim, NUM_DATA_SETS, query);
+//    double **dataSets = readCSVFile(n_data, dim, NUM_DATA_SETS, query);
+
+    double **dataSets = readBinaryFile(n_data, dim, NUM_DATA_SETS, query);
     double *data = dataSets[0];
 
 //    readBinaryFile(n_data, data, data2, data3, query);
 
 //    printDataSet(dim, n_data, data);
+
 //    double *data = generateDataSet(dim, n_data);
 //    query = generateDataSet(dim, 1);
 
@@ -258,8 +273,8 @@ int main() {
     int *M = (int *) malloc(sizeof(int));
     double *W = (double *) malloc(sizeof(double));
 
-    double *mean = (double*) malloc(dim * sizeof(double));
-    double *stdDev = (double*) malloc(dim * sizeof(double));
+    double *mean = (double *) malloc(dim * sizeof(double));
+    double *stdDev = (double *) malloc(dim * sizeof(double));
 
     initParameters(L, M, W, mean, stdDev, dim, n_data, data, centroid);
 //    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
@@ -275,12 +290,12 @@ int main() {
 
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
-    getchar();
 
-    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets, centroid);
-    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+    //second chunk comes in
+//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets, centroid);
+//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
 
-    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+//    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
     getchar();
 
