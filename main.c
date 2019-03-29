@@ -101,6 +101,9 @@ double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
     return dataSets;
 }
 
+//w = maxDistance /3
+//l_ptr: number of tables: = m => 792: correct
+//l_ptr: = m * 3 =>  921: correct
 int main() {
     srand(1);
     const int dim = 28;
@@ -111,7 +114,7 @@ int main() {
     query = (double *) malloc(dim * sizeof(double));
 
     double **dataSets = readBinaryFile(n_data, dim, NUM_DATA_SETS, query);
-    double *data = dataSets[0];
+    double *data = dataSets[1];
 
 //    printDataSet(dim, n_data, data);
     HashBucket *buckets = malloc(sizeof(HashBucket));

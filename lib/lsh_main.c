@@ -88,12 +88,14 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
     return hashTables;
 }
 
-void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int dim, int n_data, const double *data,
+
+//probe paremeters, write a function
+void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double *stdDev, int dim, int n_data, const double *data,
                     double *centroid) {
     //comeback and pick this up later
-    *M = (int) floor(dim / 2.0);
+    *m_ptr = (int) floor(dim / 2.0);
 
-    *L = 1;
+    *l_ptr = *m_ptr * 3;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -149,7 +151,9 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
 
     _mean = _mean / dim;
 
-    *W = _mean * 1.5;
+//    *w_ptr = _mean * 1.5;
+
+    *w_ptr = maxDistance/3;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -157,31 +161,29 @@ void initParameters(int *L, int *M, double *W, double *mean, double *stdDev, int
     free(buff);
 }
 
-
-
 int LSH_main(int dim, int n_data, double *data,
              double ***hashTables, HashBucket *buckets, double *centroid, double *result,
              double *datum) {
-    int *L = (int *) malloc(sizeof(int));
-    int *M = (int *) malloc(sizeof(int));
-    double *W = (double *) malloc(sizeof(double));
+    int *l_ptr = (int *) malloc(sizeof(int));
+    int *m_ptr = (int *) malloc(sizeof(int));
+    double *w_ptr = (double *) malloc(sizeof(double));
     const int NUM_PERTURBATION_VECTORS = 100;
     centroid = (double *) calloc(dim, sizeof(double));
 
     double *mean = (double *) malloc(dim * sizeof(double));
     double *stdDev = (double *) malloc(dim * sizeof(double));
 
-    initParameters(L, M, W, mean, stdDev, dim, n_data, data, centroid);
-//    printf("L - %d, M - %d, W - %f, dim - %d \n", *L, *M, *W, dim);
+    initParameters(l_ptr, m_ptr, w_ptr, mean, stdDev, dim, n_data, data, centroid);
+//    printf("l_ptr - %d, m_ptr - %d, w_ptr - %f, dim - %d \n", *l_ptr, *m_ptr, *w_ptr, dim);
 
-    hashTables = generateHashTables(*L, *M, dim, mean, stdDev);
-    printHashTables(dim, *L, *M, hashTables);
+    hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
+    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
 
-    *buckets = *LSH(dim, n_data, *L, *M, *W, hashTables, data, NULL, centroid);
+    *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid);
 
     printf("hash buckets: \n");
 
-    int numBuckets = printHashBuckets(dim, *L, *M, buckets);
+    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
@@ -190,11 +192,11 @@ int LSH_main(int dim, int n_data, double *data,
     printf("Query point: \n");
     printDataSet(dim, 1, datum);
 
-    result = LSH_probing(dim, *L, *M, *W, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid);
+    result = LSH_probing(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid);
 
     //second chunk comes in
-//    buckets = LSH(dim, n_data, *L, *M, *W, hashTables, dataSets[1], buckets, centroid);
-//    numBuckets = printHashBuckets(dim, *L, *M, buckets);
+//    buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, dataSets[1], buckets, centroid);
+//    numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
 //    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
@@ -202,7 +204,7 @@ int LSH_main(int dim, int n_data, double *data,
     printDataSet(dim, 1, result);
     getchar();
 
-//    generatePerturbationVectors(dim, *M, *W,
+//    generatePerturbationVectors(dim, *m_ptr, *w_ptr,
 //                                5, query, hashTables[0]);
 
 //    printf("Distance of query to data points in data set: \n");
@@ -210,8 +212,6 @@ int LSH_main(int dim, int n_data, double *data,
 //verify distance
     int closestIdx = 0;
     double closestDistance = MAXDOUBLE;
-
-
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -244,20 +244,17 @@ int LSH_main(int dim, int n_data, double *data,
         for (
                 int i = 0;
                 i < *
-                        L;
+                        l_ptr;
                 ++i) {
-            free(temp
-                         ->hashValues[i]);
+            free(temp->hashValues[i]);
         }
-        free(temp
-                     ->hashValues);
+        free(temp->hashValues);
         LinkedList *listIte = temp->head;
 
         while (listIte != NULL) {
             LinkedList *tempListIte = listIte;
             listIte = listIte->next;
-            free(tempListIte
-                         ->data);
+            free(tempListIte->data);
             free(tempListIte);
         }
 
@@ -266,20 +263,15 @@ int LSH_main(int dim, int n_data, double *data,
 
     for (
             int i = 0;
-            i < *
-                    L;
+            i < *l_ptr;
             ++i) {
-        for (
-                int j = 0;
-                j < *
-                        M;
-                ++j) {
+        for (int j = 0; j < *m_ptr; ++j) {
             free(hashTables[i][j]);
         }
         free(hashTables[i]);
     }
     free(hashTables);
-    free(L);
-    free(M);
-    free(W);
+    free(l_ptr);
+    free(m_ptr);
+    free(w_ptr);
 }
