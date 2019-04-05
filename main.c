@@ -120,7 +120,13 @@ int main() {
 //    printDataSet(dim, n_data, data);
     HashBucket *buckets = malloc(sizeof(HashBucket));
 
-    LSH_main(dim, n_data, data, hashTables, buckets, centroid, result, query);
+    FILE *oF = fopen("output.txt", "w");
+
+
+    LSH_main(dim, n_data, data, hashTables, buckets, centroid, result, query, oF);
+
+
+    fclose(oF);
 
 
 
@@ -146,13 +152,11 @@ int main() {
         printf("result = NULL");
     } else {
         printf("Closest data point: \n");
-        printDataSet(dim, 1, result);
+//        printDataSet(dim, 1, result);
         closestDistance = distanceOfTwoPoints(dim, query, result);
     }
 
     printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
-
-
 
     //verify variables
 //    printHashTables(dim, *L, *M, hashTables);

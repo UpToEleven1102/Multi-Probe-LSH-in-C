@@ -9,6 +9,7 @@
 #include "lsh_main.h"
 #include "utils.h"
 #include "lsh.h"
+#include <time.h>
 
 double *generateDataSet(int dim, int n_data) {
     double *data = (double *) malloc(sizeof(double) * dim * n_data);
@@ -121,14 +122,18 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
         free(ele);
     }
 
+    double distance = 0;
     double maxDistance = 0;
     for (int i = 0; i < dim; ++i) {
         centroid[i] /= n_data;
         mean[i] = buff[i][2] / n_data;
+        distance += (buff[i][0] - buff[i][1]) * (buff[i][0] - buff[i][1]);
         if (maxDistance < buff[i][0] - buff[i][1]) {
             maxDistance = buff[i][0] - buff[i][1];
         }
     }
+
+    distance = sqrt(distance)/dim;
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -151,7 +156,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = maxDistance/3;
+    *w_ptr = distance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -161,7 +166,10 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 int LSH_main(int dim, int n_data, double *data,
              double ***hashTables, HashBucket *buckets, double *centroid, double *result,
-             double *datum) {
+             double *datum, FILE *file) {
+    clock_t start, end;
+    double generateBucketsTime, searchTime;
+
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
     double *w_ptr = (double *) malloc(sizeof(double));
@@ -176,21 +184,31 @@ int LSH_main(int dim, int n_data, double *data,
 
     hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
 //    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
+    start = clock();
 
     *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid);
 
-//    printf("hash buckets: \n");
-//
-//    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
-//
+    end = clock();
+    generateBucketsTime = end - start;
+
+    printf("hash buckets: \n");
+
+    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
+
 //    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
 //    getchar();
 
-    printf("Query point: \n");
-    printDataSet(dim, 1, datum);
+//    printf("Query point: \n");
+//    printDataSet(dim, 1, datum);
 
+    start = clock();
     result = LSH_probing(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid);
+    end = clock();
+
+    searchTime = end - start;
+
+    fprintf(file, "w: %f, l: %d, m: %d, num bucket: %d, genereate buckets time: %f, search time: %f \n", *w_ptr, *l_ptr, *m_ptr, numBuckets, generateBucketsTime, searchTime);
 
     //second chunk comes in
 //    buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, dataSets[1], buckets, centroid);
@@ -198,8 +216,8 @@ int LSH_main(int dim, int n_data, double *data,
 
 //    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
-    printf("Result: \n");
-    printDataSet(dim, 1, result);
+//    printf("Result: \n");
+//    printDataSet(dim, 1, result);
 //    getchar();
 
 //    generatePerturbationVectors(dim, *m_ptr, *w_ptr,

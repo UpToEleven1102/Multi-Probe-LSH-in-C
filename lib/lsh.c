@@ -99,6 +99,7 @@ double calculateScore(const int *a0, int length, struct pairZ zs[]) {
 struct HeapEle *minHeap(struct HeapEle **heap) {
     struct HeapEle *ite = heap[0];
     struct HeapEle *res = (struct HeapEle *) malloc(sizeof(struct HeapEle));
+
     struct HeapEle *min = NULL;
     double minScore = MAXDOUBLE;
     while (ite != NULL) {
