@@ -332,12 +332,10 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
 
     printDataSet(dim, 1, result);
 
-    getchar();
+//    getchar();
 
     return result;
 }
-
-
 
 double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid) {
     double *result;
@@ -354,6 +352,6 @@ double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashB
 
 //    printf("Closest distance: %f", distanceOfTwoPoints(dim, result, query));
     free(hashVal);
-    getchar();
+//    getchar();
     return result;
 }

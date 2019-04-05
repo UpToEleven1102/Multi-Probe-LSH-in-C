@@ -112,6 +112,7 @@ int main() {
 
     double *query, *result, *centroid, ***hashTables;
     query = (double *) malloc(dim * sizeof(double));
+    result = (double *) malloc(dim * sizeof(double));
 
     double **dataSets = readBinaryFile(n_data, dim, NUM_DATA_SETS, query);
     double *data = dataSets[1];
@@ -122,17 +123,45 @@ int main() {
     LSH_main(dim, n_data, data, hashTables, buckets, centroid, result, query);
 
 
+
+//verify distance
+    int closestIdx = 0;
+    double closestDistance = MAXDOUBLE;
+
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        double distance = distanceOfTwoPoints(dim, query, ele);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIdx = i;
+            for (int j = 0; j < dim; ++j) {
+                result[j] = ele[j];
+            }
+        }
+//        printf("data %d: %f \n", i, distance);
+        free(ele);
+    }
+
+    if (result == NULL) {
+        printf("result = NULL");
+    } else {
+        printf("Closest data point: \n");
+        printDataSet(dim, 1, result);
+        closestDistance = distanceOfTwoPoints(dim, query, result);
+    }
+
+    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
+
+
+
     //verify variables
 //    printHashTables(dim, *L, *M, hashTables);
 //    printDataSet(dim, n_data, data);
 
 
 //free pointer variables
-//    for (int i = 0; i < NUM_DATA_SETS; ++i) {
-//        free(dataSets[i]);
-//    }
-//    free(dataSets);
-
-
-    free(data);
+    for (int i = 0; i < NUM_DATA_SETS; ++i) {
+        free(dataSets[i]);
+    }
+    free(dataSets);
 }

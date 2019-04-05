@@ -30,8 +30,6 @@ double gaussian_rand(double mean, double stdDev, int phase) {
     const double epsilon = 2.22507e-308;
     const double two_pi = 2 * M_PI;
 
-    printf("%f \n", epsilon);
-
     if (phase == 1)
         return z1 * stdDev + mean;
 
@@ -177,7 +175,7 @@ int LSH_main(int dim, int n_data, double *data,
 //    printf("l_ptr - %d, m_ptr - %d, w_ptr - %f, dim - %d \n", *l_ptr, *m_ptr, *w_ptr, dim);
 
     hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
-    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
+//    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
 
     *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid);
 
@@ -187,7 +185,7 @@ int LSH_main(int dim, int n_data, double *data,
 
     printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
-    getchar();
+//    getchar();
 
     printf("Query point: \n");
     printDataSet(dim, 1, datum);
@@ -202,7 +200,7 @@ int LSH_main(int dim, int n_data, double *data,
 
     printf("Result: \n");
     printDataSet(dim, 1, result);
-    getchar();
+//    getchar();
 
 //    generatePerturbationVectors(dim, *m_ptr, *w_ptr,
 //                                5, query, hashTables[0]);
@@ -210,32 +208,6 @@ int LSH_main(int dim, int n_data, double *data,
 //    printf("Distance of query to data points in data set: \n");
 
 //verify distance
-    int closestIdx = 0;
-    double closestDistance = MAXDOUBLE;
-
-    for (int i = 0; i < n_data; ++i) {
-        double *ele = getElementAtIndex(i, dim, n_data, data);
-        double distance = distanceOfTwoPoints(dim, datum, ele);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIdx = i;
-            for (int j = 0; j < dim; ++j) {
-                result[j] = ele[j];
-            }
-        }
-        printf("data %d: %f \n", i, distance);
-        free(ele);
-    }
-
-    if (result == NULL) {
-        printf("result = NULL");
-    } else {
-        printf("Closest data point: \n");
-        printDataSet(dim, 1, result);
-        closestDistance = distanceOfTwoPoints(dim, datum, result);
-    }
-
-    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
 
     HashBucket *ite = buckets;
     while (ite != NULL) {
