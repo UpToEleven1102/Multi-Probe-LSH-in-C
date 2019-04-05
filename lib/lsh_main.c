@@ -89,8 +89,9 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
 
 
 //probe paremeters, write a function
-void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double *stdDev, int dim, int n_data, const double *data,
-                    double *centroid) {
+void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double *stdDev, int dim, int n_data,
+                    const double *data,
+                    double *centroid, double *dataSpread) {
     //comeback and pick this up later
     *m_ptr = (int) floor(dim / 2.0);
 
@@ -133,7 +134,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
         }
     }
 
-    distance = sqrt(distance)/dim;
+    distance = sqrt(distance) / dim;
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -154,9 +155,10 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
     _mean = _mean / dim;
 
+    *dataSpread = distance;
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = distance;
+    *w_ptr = distance/2;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -169,6 +171,8 @@ int LSH_main(int dim, int n_data, double *data,
              double *datum, FILE *file) {
     clock_t start, end;
     double generateBucketsTime, searchTime;
+    double *distanceB4Probing = (double *) malloc(sizeof(double));
+    double *dataSpread = (double*) malloc(sizeof(double));
 
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
@@ -179,7 +183,7 @@ int LSH_main(int dim, int n_data, double *data,
     double *mean = (double *) malloc(dim * sizeof(double));
     double *stdDev = (double *) malloc(dim * sizeof(double));
 
-    initParameters(l_ptr, m_ptr, w_ptr, mean, stdDev, dim, n_data, data, centroid);
+    initParameters(l_ptr, m_ptr, w_ptr, mean, stdDev, dim, n_data, data, centroid, dataSpread);
 //    printf("l_ptr - %d, m_ptr - %d, w_ptr - %f, dim - %d \n", *l_ptr, *m_ptr, *w_ptr, dim);
 
     hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
@@ -203,12 +207,18 @@ int LSH_main(int dim, int n_data, double *data,
 //    printDataSet(dim, 1, datum);
 
     start = clock();
-    result = LSH_probing(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid);
+
+
+    result = LSH_probing(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid,
+                         distanceB4Probing);
     end = clock();
 
     searchTime = end - start;
 
-    fprintf(file, "w: %f, l: %d, m: %d, num bucket: %d, genereate buckets time: %f, search time: %f \n", *w_ptr, *l_ptr, *m_ptr, numBuckets, generateBucketsTime, searchTime);
+    fprintf(file,
+            "- dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance before probing: %f, distance after probing: %f",
+            dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, numBuckets, generateBucketsTime, searchTime, *distanceB4Probing,
+            distanceOfTwoPoints(dim, result, datum));
 
     //second chunk comes in
 //    buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, dataSets[1], buckets, centroid);

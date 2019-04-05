@@ -275,7 +275,7 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
 
 double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
                     HashBucket *buckets, double *query,
-                   int **perturVectors, int num_vectors, double *centroid) {
+                   int **perturVectors, int num_vectors, double *centroid, double *distanceB4Probing) {
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
@@ -311,6 +311,8 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
         ite = ite->next;
     }
 
+    *distanceB4Probing = distance;
+
     printf("Closest distance b4 probing: %f \n", distance);
 
     for (int i = 0; i < num_vectors; ++i) {
@@ -338,14 +340,14 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     return result;
 }
 
-double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid) {
+double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid, double *distanceB4Probing) {
     double *result;
     int **hashVal = calculateHashValues(dim, l, m, w, centroid, hashTables, query);
     double distance = MAXDOUBLE;
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
-    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS, centroid);
+    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS, centroid, distanceB4Probing);
 
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);
