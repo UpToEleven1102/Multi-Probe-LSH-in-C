@@ -95,7 +95,9 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     //comeback and pick this up later
     *m_ptr = (int) floor(dim / 2.0);
 
-    *l_ptr = *m_ptr * 3;
+//    *l_ptr = *m_ptr * 3;
+
+    *l_ptr = dim / 2;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -158,7 +160,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     *dataSpread = distance;
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = distance/2;
+    *w_ptr = distance * 1.4;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
