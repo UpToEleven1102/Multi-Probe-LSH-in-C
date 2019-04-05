@@ -179,11 +179,11 @@ int LSH_main(int dim, int n_data, double *data,
 
     *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid);
 
-    printf("hash buckets: \n");
-
-    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
-
-    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+//    printf("hash buckets: \n");
+//
+//    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
+//
+//    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
 //    getchar();
 

@@ -221,9 +221,9 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
         }
     }
 
-    for (int i = 0; i < 2 * m; ++i) {
-        printf("%f - %d \n", twoM[i].x, twoM[i].i);
-    }
+//    for (int i = 0; i < 2 * m; ++i) {
+//        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+//    }
 
     //generate Heap
     int *a0 = (int *) malloc(sizeof(int));
@@ -250,13 +250,13 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
         free(minA);
     }
 
-    printf("perturbation vectors: \n");
-    for (int i = 0; i < numOfVectors; ++i) {
-        printf("%d -- \n", i);
-        for (int j = 0; j < m; ++j) {
-            printf("%d \n", perturbationVectors[i][j]);
-        }
-    }
+//    printf("perturbation vectors: \n");
+//    for (int i = 0; i < numOfVectors; ++i) {
+//        printf("%d -- \n", i);
+//        for (int j = 0; j < m; ++j) {
+//            printf("%d \n", perturbationVectors[i][j]);
+//        }
+//    }
 
     while (heap->next != NULL) {
         if (heap->prev != NULL)
@@ -283,13 +283,13 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     //convert perturbation vectors
     int ***probingHashVals = (int ***) malloc(num_vectors * sizeof(int **));
     for (int i = 0; i < num_vectors; ++i) {
-        printf("pertur vector %d \n", i);
+//        printf("pertur vector %d \n", i);
         probingHashVals[i] = (int **) malloc(l * sizeof(int *));
         for (int j = 0; j < l; ++j) {
             probingHashVals[i][j] = (int *) malloc(m * sizeof(int));
             for (int k = 0; k < m; ++k) {
                 probingHashVals[i][j][k] = perturVectors[i][k] + hashVal[j][k];
-                printf("%d \n", probingHashVals[i][j][k]);
+//                printf("%d \n", probingHashVals[i][j][k]);
             }
         }
     }
