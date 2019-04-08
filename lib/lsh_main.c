@@ -93,11 +93,11 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
                     const double *data,
                     double *centroid, double *dataSpread) {
     //comeback and pick this up later
-    *m_ptr = (int) floor(dim / 2.0);
+    *m_ptr = (int) floor(dim / 4.0);
 
 //    *l_ptr = *m_ptr * 3;
 
-    *l_ptr = dim / 2;
+    *l_ptr = 2 * *m_ptr;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -136,7 +136,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
         }
     }
 
-    distance = sqrt(distance) / dim;
+    distance = sqrt(distance / dim);
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -160,7 +160,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     *dataSpread = distance;
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = distance * 1.4;
+    *w_ptr = distance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);

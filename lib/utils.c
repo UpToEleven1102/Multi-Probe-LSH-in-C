@@ -137,7 +137,7 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
         }
 
 
-        printf("Elements: \n");
+//        printf("Elements: \n");
 
 //        LinkedList *listIte = ite->head;
 //

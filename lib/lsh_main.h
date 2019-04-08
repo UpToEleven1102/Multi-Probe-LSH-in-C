@@ -6,6 +6,7 @@
 #define LSH_PROBING_LSH_MAIN_H
 
 #include "utils.h"
+#include <stdio.h>
 
 int LSH_main(int dim, int n_data, double *data,
              double ***hashTables, HashBucket *buckets, double *centroid, double *result,

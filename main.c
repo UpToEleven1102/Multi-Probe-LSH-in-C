@@ -106,7 +106,7 @@ double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
 //l_ptr: = m * 3 =>  921: correct
 int main() {
     srand(1);
-    const int dim = 28;
+    const int dim = 29;
     const int n_data = 100000;
     const int NUM_DATA_SETS = 3;
 

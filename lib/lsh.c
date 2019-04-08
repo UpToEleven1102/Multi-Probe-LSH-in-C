@@ -100,7 +100,7 @@ struct HeapEle *minHeap(struct HeapEle **heap) {
     struct HeapEle *ite = heap[0];
     struct HeapEle *res = (struct HeapEle *) malloc(sizeof(struct HeapEle));
 
-    struct HeapEle *min = NULL;
+    struct HeapEle *min = (struct HeapEle *) malloc(sizeof(struct HeapEle));
     double minScore = MAXDOUBLE;
     while (ite != NULL) {
         if (minScore > ite->score) {
@@ -234,8 +234,12 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
 
     //generate perturbation vectors
     for (int i = 0; i < numOfVectors; ++i) {
-        struct HeapEle *minA;
+        struct HeapEle *minA = NULL;
         do {
+            if (minA != NULL) {
+                free(minA->data);
+                free(minA);
+            }
             minA = minHeap(&heap);
 
             struct HeapEle *shifted = shiftHeap(minA, twoM);
