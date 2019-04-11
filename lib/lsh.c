@@ -105,17 +105,20 @@ struct HeapEle *minHeap(struct HeapEle **heap) {
     while (ite != NULL) {
         if (minScore > ite->score) {
             minScore = ite->score;
-            res->length = ite->length;
-            res->next = NULL;
-            res->prev = NULL;
-            res->data = (int *) malloc(res->length * sizeof(int));
-            for (int i = 0; i < res->length; ++i) {
-                res->data[i] = ite->data[i];
-            }
-            res->score = ite->score;
             min = ite;
         }
         ite = ite->next;
+    }
+
+    if (min!=NULL) {
+        res->length = ite->length;
+        res->next = NULL;
+        res->prev = NULL;
+        res->data = (int *) malloc(res->length * sizeof(int));
+        for (int i = 0; i < res->length; ++i) {
+            res->data[i] = min->data[i];
+        }
+        res->score = min->score;
     }
 
     if (min->next != NULL && min->prev != NULL) {
@@ -123,6 +126,8 @@ struct HeapEle *minHeap(struct HeapEle **heap) {
         min->next->prev = min->prev;
         min->next = NULL;
         min->prev = NULL;
+        free(min->data);
+        free(min);
     } else if (min->prev == NULL) {
         if (heap[0]->next == NULL) {
             free(heap[0]->data);
