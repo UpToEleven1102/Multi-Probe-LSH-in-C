@@ -11,7 +11,7 @@
 HashBucket *hashBuckets = NULL;
 
 int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid) {
-    int **hashValues = calculateHashValues(dim, l, m, w, centroid, hashTables, ele);
+    int **hashValues = calculateHashValues(dim, l, m, w ,centroid, hashTables, ele);
 
     if (hashBuckets == NULL) {
         hashBuckets = (HashBucket *) malloc(sizeof(HashBucket));
@@ -50,8 +50,7 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, d
     return 0;
 }
 
-HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets,
-                double *centroid) {
+HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets, double *centroid) {
     hashBuckets = buckets;
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -97,46 +96,62 @@ double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     return score;
 }
 
-struct HeapTreeNode *minHeap(struct HeapTreeNode *heap) {
-    if (heap == NULL) {
-        return NULL;
+struct HeapEle *minHeap(struct HeapEle **heap) {
+    struct HeapEle *ite = heap[0];
+    struct HeapEle *res = (struct HeapEle *) malloc(sizeof(struct HeapEle));
+
+    struct HeapEle *min = (struct HeapEle *) malloc(sizeof(struct HeapEle));
+    double minScore = MAXDOUBLE;
+    while (ite != NULL) {
+        if (minScore > ite->score) {
+            minScore = ite->score;
+            min = ite;
+        }
+        ite = ite->next;
     }
 
-    if (heap->left == NULL) {
-        struct HeapTreeNode *min = (struct HeapTreeNode *) malloc(sizeof(struct HeapTreeNode));
-        min->score = heap->score;
-        min->length = heap->length;
-        min->data = (int *) malloc(min->length * sizeof(int));
-        for (int i = 0; i < min->length; i++) {
-            min->data[i] = heap->data[i];
+    if (min!=NULL) {
+        res->length = ite->length;
+        res->next = NULL;
+        res->prev = NULL;
+        res->data = (int *) malloc(res->length * sizeof(int));
+        for (int i = 0; i < res->length; ++i) {
+            res->data[i] = min->data[i];
         }
-        min->left = NULL;
-        min->right = NULL;
-        return min;
-    } else {
-        return minHeap(heap->left);
+        res->score = min->score;
     }
+
+    if (min->next != NULL && min->prev != NULL) {
+        min->prev->next = min->next;
+        min->next->prev = min->prev;
+        min->next = NULL;
+        min->prev = NULL;
+        free(min->data);
+        free(min);
+    } else if (min->prev == NULL) {
+        if (heap[0]->next == NULL) {
+            free(heap[0]->data);
+            *heap = NULL;
+        }
+    } else {
+        min->prev->next = NULL;
+        min->prev = NULL;
+    }
+
+    return res;
 }
 
-//error might happen here
-struct HeapTreeNode *insertEleHeap(struct HeapTreeNode **heap, struct HeapTreeNode *ele) {
-    //pass double pointer to modify the heap outside the scope of the function
+void insertEleHeap(struct HeapEle **heap, struct HeapEle *ele) {
     if (*heap == NULL) {
         *heap = ele;
-        return ele;
     } else {
-        if (ele->score <= (*heap)->score) {
-            //recursive left
-            (*heap)->left = insertEleHeap(&(*heap)->left, ele);
-        } else {
-            (*heap)->right = insertEleHeap(&(*heap)->right, ele);
-        }
-
-        return *heap;
+        ele->next = *heap;
+        heap[0]->prev = ele;
+        *heap = ele;
     }
 }
 
-bool isValid(struct HeapTreeNode *ele, int twoM) {
+bool isValid(struct HeapEle *ele, int twoM) {
     for (int i = 0; i < ele->length; ++i) {
         if (ele->data[i] > twoM)
             return false;
@@ -151,7 +166,7 @@ bool isValid(struct HeapTreeNode *ele, int twoM) {
 }
 
 
-struct HeapTreeNode *shiftHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
+struct HeapEle *shiftHeap(struct HeapEle *ele, struct pairZ *zs) {
     int *data = (int *) malloc(ele->length * sizeof(int));
 
     for (int i = 0; i < ele->length - 1; ++i) {
@@ -160,18 +175,18 @@ struct HeapTreeNode *shiftHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
 
     data[ele->length - 1] = ele->data[ele->length - 1] + 1;
 
-    struct HeapTreeNode *shifted = (struct HeapTreeNode *) malloc(sizeof(struct HeapTreeNode));
+    struct HeapEle *shifted = (struct HeapEle *) malloc(sizeof(struct HeapEle));
     shifted->data = data;
     shifted->score = calculateScore(data, ele->length, zs);
     shifted->length = ele->length;
-    shifted->left = NULL;
-    shifted->right = NULL;
+    shifted->next = NULL;
+    shifted->prev = NULL;
 
     return shifted;
 }
 
-struct HeapTreeNode *expandHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
-    struct HeapTreeNode *expanded = (struct HeapTreeNode *) malloc(sizeof(struct HeapTreeNode));
+struct HeapEle *expandHeap(struct HeapEle *ele, struct pairZ *zs) {
+    struct HeapEle *expanded = (struct HeapEle *) malloc(sizeof(struct HeapEle));
     expanded->data = (int *) malloc(ele->length + 1 * sizeof(int));
     for (int i = 0; i < ele->length; ++i) {
         expanded->data[i] = ele->data[i];
@@ -179,25 +194,13 @@ struct HeapTreeNode *expandHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
     expanded->data[ele->length] = ele->data[ele->length - 1] + 1;
     expanded->length = ele->length + 1;
     expanded->score = calculateScore(expanded->data, expanded->length, zs);
-    expanded->left = NULL;
-    expanded->right = NULL;
+    expanded->next = NULL;
+    expanded->prev = NULL;
     return expanded;
 }
 
-int freeHeap(struct HeapTreeNode *heap) {
-    if (heap==NULL){
-        return 0;
-    }
-
-    free(heap->data);
-    freeHeap(heap->left);
-    freeHeap(heap->right);
-//    free(heap);
-    return 0;
-}
-
 int **probing(int numOfVectors, int dim, int l, int m, double w,
-              double *query, double **hashFuncs) {
+                double *query, double **hashFuncs) {
     int **perturbationVectors = (int **) malloc(numOfVectors * sizeof(int *));
     //find 2M array
     struct pairZ twoM[2 * m];
@@ -231,28 +234,33 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
     //generate Heap
     int *a0 = (int *) malloc(sizeof(int));
     a0[0] = 0;
-//    struct HeapTreeNode *heap = &(struct HeapTreeNode) {.data = a0, .length= 1, .score = calculateScore(a0, 1,
-//                                                                                              twoM), .next = NULL, .prev = NULL};
+    struct HeapEle *heap = &(struct HeapEle) {.data = a0, .length= 1, .score = calculateScore(a0, 1,
+                                                                                              twoM), .next = NULL, .prev = NULL};
 
-    struct HeapTreeNode *heap = &(struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
-                                                                                                       twoM), .left=NULL, .right=NULL};
+    //generate first elment //done
+
+    //apply expand, shift to the element // done
+    //put all into heap //done
+
+    //extract min from the heap //done
+    //expand and shift to the min //done
+    //put those 2 to the heap//done
+    //validate min
+
 
     //generate perturbation vectors
     for (int i = 0; i < numOfVectors; ++i) {
-        struct HeapTreeNode *minA = NULL;
+        struct HeapEle *minA = NULL;
         do {
-            //free current minA
             if (minA != NULL) {
                 free(minA->data);
                 free(minA);
             }
+            minA = minHeap(&heap);
 
-            //extract minHeap
-            minA = minHeap(heap);
-
-            struct HeapTreeNode *shifted = shiftHeap(minA, twoM);
+            struct HeapEle *shifted = shiftHeap(minA, twoM);
             insertEleHeap(&heap, shifted);
-            struct HeapTreeNode *expanded = expandHeap(minA, twoM);
+            struct HeapEle *expanded = expandHeap(minA, twoM);
             insertEleHeap(&heap, expanded);
         } while (!isValid(minA, 2 * m));
         perturbationVectors[i] = (int *) malloc(m * sizeof(int));
@@ -271,18 +279,27 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
 //        }
 //    }
 
+    while (heap->next != NULL) {
+        if (heap->prev != NULL)
+            free(heap->prev->data);
+        free(heap->prev);
+        heap = heap->next;
+    }
+    free(heap->data);
+    free(heap);
 
-    freeHeap(heap);
+//    getchar();
+
     return perturbationVectors;
 }
 
 double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
-                   HashBucket *buckets, double *query,
+                    HashBucket *buckets, double *query,
                    int **perturVectors, int num_vectors, double *centroid, double *distanceB4Probing) {
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
-    int **hashVal = calculateHashValues(dim, l, m, w, centroid, hashTables, query);
+    int **hashVal = calculateHashValues(dim, l, m, w, centroid ,hashTables, query);
 
     //convert perturbation vectors
     int ***probingHashVals = (int ***) malloc(num_vectors * sizeof(int **));
@@ -334,7 +351,7 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
             ite = ite->next;
         }
     }
-    printf("Closest distance: %f", distance);
+    printf("Closest distance: %f",distance);
 
     printDataSet(dim, 1, result);
 
@@ -343,17 +360,14 @@ double *LSH_search(int dim, int l, int m, double w, double ***hashTables,
     return result;
 }
 
-double *
-LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS,
-            double *centroid, double *distanceB4Probing) {
+double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid, double *distanceB4Probing) {
     double *result;
     int **hashVal = calculateHashValues(dim, l, m, w, centroid, hashTables, query);
     double distance = MAXDOUBLE;
 
     int **perturVectors = probing(NUM_VECTORS, dim, l, m, w, query, hashTables[0]);
 
-    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS, centroid,
-                        distanceB4Probing);
+    result = LSH_search(dim, l, m, w, hashTables, buckets, query, perturVectors, NUM_VECTORS, centroid, distanceB4Probing);
 
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);

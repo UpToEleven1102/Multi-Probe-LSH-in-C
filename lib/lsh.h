@@ -15,12 +15,12 @@ struct HeapEle {
     struct HeapEle *prev;
 };
 
-struct HeapTree {
+struct HeapTreeNode {
     int *data;
     double score;
     int length;
-    struct HeapTree *left;
-    struct HeapTree *right;
+    struct HeapTreeNode *left;
+    struct HeapTreeNode *right;
 };
 
 //double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
