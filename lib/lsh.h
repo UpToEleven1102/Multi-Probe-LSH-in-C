@@ -15,6 +15,14 @@ struct HeapEle {
     struct HeapEle *prev;
 };
 
+struct HeapTree {
+    int *data;
+    double score;
+    int length;
+    struct HeapTree *left;
+    struct HeapTree *right;
+};
+
 //double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);
 
 HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets, double *centroid);
