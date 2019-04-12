@@ -21,6 +21,7 @@ struct HeapTreeNode {
     int length;
     struct HeapTreeNode *left;
     struct HeapTreeNode *right;
+    struct HeapTreeNode *parent;
 };
 
 //double **calculateHashValues(int dim, int l, int m, double w, double ***hashTables, double *ele);

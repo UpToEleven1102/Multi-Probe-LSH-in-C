@@ -242,7 +242,7 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
     //apply expand, shift to the element // done
     //put all into heap //done
 
-    //extract min from the heap //done
+    //extract min from the heap // so fucking hard
     //expand and shift to the min //done
     //put those 2 to the heap//done
     //validate min

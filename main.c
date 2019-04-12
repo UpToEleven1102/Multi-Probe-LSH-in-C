@@ -101,9 +101,6 @@ double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
     return dataSets;
 }
 
-//w = maxDistance /3
-//l_ptr: number of tables: = m => 792: correct
-//l_ptr: = m * 3 =>  921: correct
 int main() {
     srand(1);
     const int dim = 29;

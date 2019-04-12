@@ -10,6 +10,19 @@
 
 HashBucket *hashBuckets = NULL;
 
+int freeHeap(struct HeapTreeNode *heap) {
+    if (heap == NULL) {
+        return 0;
+    }
+
+    free(heap->data);
+    freeHeap(heap->left);
+    freeHeap(heap->right);
+
+    //free(heap);
+    return 0;
+}
+
 int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid) {
     int **hashValues = calculateHashValues(dim, l, m, w, centroid, hashTables, ele);
 
@@ -97,41 +110,59 @@ double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     return score;
 }
 
-struct HeapTreeNode *minHeap(struct HeapTreeNode *heap) {
-    if (heap == NULL) {
+struct HeapTreeNode *minHeap(struct HeapTreeNode **heap) {
+    if (*heap == NULL) {
         return NULL;
     }
 
-    if (heap->left == NULL) {
+    if ((*heap)->left == NULL) {
         struct HeapTreeNode *min = (struct HeapTreeNode *) malloc(sizeof(struct HeapTreeNode));
-        min->score = heap->score;
-        min->length = heap->length;
+        min->score = (*heap)->score;
+        min->length = (*heap)->length;
         min->data = (int *) malloc(min->length * sizeof(int));
         for (int i = 0; i < min->length; i++) {
-            min->data[i] = heap->data[i];
+            min->data[i] = (*heap)->data[i];
         }
         min->left = NULL;
         min->right = NULL;
+
+        //remove heap
+        if ((*heap)->right == NULL) {
+            //no right child
+            if ((*heap)->parent !=NULL) {
+                (*heap)->parent->left = NULL;
+            }
+            freeHeap(*heap);
+            *heap = NULL;
+        } else {
+            if ((*heap)->parent != NULL) {
+                (*heap)->parent->left = (*heap)->right;
+//                freeHeap(*heap);
+            } else {
+//                freeHeap(*heap);
+                *heap = (*heap)->right;
+            }
+        }
         return min;
     } else {
-        return minHeap(heap->left);
+        return minHeap(&(*heap)->left);
     }
 }
 
 //error might happen here
-struct HeapTreeNode *insertEleHeap(struct HeapTreeNode **heap, struct HeapTreeNode *ele) {
+struct HeapTreeNode *insertEleHeap(struct HeapTreeNode **heap, struct HeapTreeNode *parent, struct HeapTreeNode *ele) {
     //pass double pointer to modify the heap outside the scope of the function
     if (*heap == NULL) {
         *heap = ele;
         return ele;
     } else {
         if (ele->score <= (*heap)->score) {
-            //recursive left
-            (*heap)->left = insertEleHeap(&(*heap)->left, ele);
+            (*heap)->parent = parent;
+            (*heap)->left = insertEleHeap(&(*heap)->left, *heap, ele);
         } else {
-            (*heap)->right = insertEleHeap(&(*heap)->right, ele);
+            (*heap)->parent = parent;
+            (*heap)->right = insertEleHeap(&(*heap)->right, *heap, ele);
         }
-
         return *heap;
     }
 }
@@ -166,6 +197,7 @@ struct HeapTreeNode *shiftHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
     shifted->length = ele->length;
     shifted->left = NULL;
     shifted->right = NULL;
+    shifted->parent = NULL;
 
     return shifted;
 }
@@ -181,19 +213,8 @@ struct HeapTreeNode *expandHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
     expanded->score = calculateScore(expanded->data, expanded->length, zs);
     expanded->left = NULL;
     expanded->right = NULL;
+    expanded->parent = NULL;
     return expanded;
-}
-
-int freeHeap(struct HeapTreeNode *heap) {
-    if (heap==NULL){
-        return 0;
-    }
-
-    free(heap->data);
-    freeHeap(heap->left);
-    freeHeap(heap->right);
-//    free(heap);
-    return 0;
 }
 
 int **probing(int numOfVectors, int dim, int l, int m, double w,
@@ -235,25 +256,18 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
 //                                                                                              twoM), .next = NULL, .prev = NULL};
 
     struct HeapTreeNode *heap = &(struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
-                                                                                                       twoM), .left=NULL, .right=NULL};
-
+                                                                                                       twoM), .left=NULL, .right=NULL, .parent=NULL};
     //generate perturbation vectors
     for (int i = 0; i < numOfVectors; ++i) {
         struct HeapTreeNode *minA = NULL;
         do {
-            //free current minA
-            if (minA != NULL) {
-                free(minA->data);
-                free(minA);
-            }
-
             //extract minHeap
-            minA = minHeap(heap);
+            minA = minHeap(&heap);
 
             struct HeapTreeNode *shifted = shiftHeap(minA, twoM);
-            insertEleHeap(&heap, shifted);
+            insertEleHeap(&heap, NULL, shifted);
             struct HeapTreeNode *expanded = expandHeap(minA, twoM);
-            insertEleHeap(&heap, expanded);
+            insertEleHeap(&heap, NULL, expanded);
         } while (!isValid(minA, 2 * m));
         perturbationVectors[i] = (int *) malloc(m * sizeof(int));
         for (int j = 0; j < minA->length; ++j) {
@@ -263,14 +277,15 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
         free(minA);
     }
 
-//    printf("perturbation vectors: \n");
-//    for (int i = 0; i < numOfVectors; ++i) {
-//        printf("%d -- \n", i);
-//        for (int j = 0; j < m; ++j) {
-//            printf("%d \n", perturbationVectors[i][j]);
-//        }
-//    }
+    printf("perturbation vectors: \n");
+    for (int i = 0; i < numOfVectors; ++i) {
+        printf("%d -- \n", i);
+        for (int j = 0; j < m; ++j) {
+            printf("%d \n", perturbationVectors[i][j]);
+        }
+    }
 
+    getchar();
 
     freeHeap(heap);
     return perturbationVectors;
