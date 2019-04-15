@@ -97,7 +97,8 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *l_ptr = *m_ptr * 3;
 
-    *l_ptr = 2 * *m_ptr;
+//    *l_ptr = 2 * *m_ptr;
+    *l_ptr = 1;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -179,7 +180,7 @@ int LSH_main(int dim, int n_data, double *data,
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
     double *w_ptr = (double *) malloc(sizeof(double));
-    const int NUM_PERTURBATION_VECTORS = 50;
+    const int NUM_PERTURBATION_VECTORS = 100;
     centroid = (double *) calloc(dim, sizeof(double));
 
     double *mean = (double *) malloc(dim * sizeof(double));
