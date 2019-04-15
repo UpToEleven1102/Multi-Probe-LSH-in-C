@@ -179,7 +179,7 @@ int LSH_main(int dim, int n_data, double *data,
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
     double *w_ptr = (double *) malloc(sizeof(double));
-    const int NUM_PERTURBATION_VECTORS = 100;
+    const int NUM_PERTURBATION_VECTORS = 50;
     centroid = (double *) calloc(dim, sizeof(double));
 
     double *mean = (double *) malloc(dim * sizeof(double));

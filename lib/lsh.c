@@ -100,12 +100,11 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
     return minDistance;
 }
 
-//??correct formula
 double calculateScore(const int *a0, int length, struct pairZ zs[]) {
     double score = 0;
     for (int i = 0; i < length; ++i) {
-//        score += zs[a0[i]].x;
-        score += zs[a0[i]].x * zs[a0[i]].x;
+        score += zs[a0[i]].x;
+//        score += zs[a0[i]].x * zs[a0[i]].x;
     }
     return score;
 }
@@ -132,12 +131,13 @@ struct HeapTreeNode *minHeap(struct HeapTreeNode **heap) {
             if ((*heap)->parent !=NULL) {
                 (*heap)->parent->left = NULL;
             }
-            freeHeap(*heap);
+//            freeHeap(*heap);
             *heap = NULL;
         } else {
             if ((*heap)->parent != NULL) {
+                (*heap)->right->parent = (*heap)->parent;
                 (*heap)->parent->left = (*heap)->right;
-//                freeHeap(*heap);
+                freeHeap(*heap);
             } else {
 //                freeHeap(*heap);
                 *heap = (*heap)->right;
