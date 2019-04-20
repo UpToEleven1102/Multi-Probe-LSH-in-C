@@ -143,7 +143,7 @@ struct HeapTreeNode *minHeap(struct HeapTreeNode **heap) {
         }
         return min;
     } else {
-        return minHeap(&(*heap)->left);
+        return minHeap(&((*heap)->left));
     }
 }
 
@@ -159,10 +159,10 @@ struct HeapTreeNode *insertEleHeap(struct HeapTreeNode **heap, struct HeapTreeNo
     } else {
         if ((*ele)->score <= (*heap)->score) {
             (*heap)->parent = parent;
-            (*heap)->left = insertEleHeap(&(*heap)->left, *heap, ele);
+            (*heap)->left = insertEleHeap(&((*heap)->left), *heap, ele);
         } else {
             (*heap)->parent = parent;
-            (*heap)->right = insertEleHeap(&(*heap)->right, *heap, ele);
+            (*heap)->right = insertEleHeap(&((*heap)->right), *heap, ele);
         }
         return *heap;
     }
@@ -255,8 +255,8 @@ int **probing(int numOfVectors, int dim, int l, int m, double w,
     int *a0 = (int *) malloc(sizeof(int));
     a0[0] = 0;
 
-    struct HeapTreeNode *heap = &(struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
-                                                                                                       twoM), .left=NULL, .right=NULL, .parent=NULL};
+    struct HeapTreeNode *heap = &((struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
+                                                                                                       twoM), .left=NULL, .right=NULL, .parent=NULL});
     //generate perturbation vectors
     for (int i = 0; i < numOfVectors; ++i) {
         struct HeapTreeNode *minA = NULL;
