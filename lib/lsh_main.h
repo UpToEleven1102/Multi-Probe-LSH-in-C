@@ -9,6 +9,5 @@
 #include <stdio.h>
 
 int LSH_main(int dim, int n_data, double *data,
-             double ***hashTables, HashBucket *buckets, double *centroid, double *result,
-             double *datum, FILE *file);
+             double ***hashTables, HashBucket *buckets, double *centroid, int num_queries, double **queries, FILE *file);
 #endif //LSH_PROBING_LSH_MAIN_H

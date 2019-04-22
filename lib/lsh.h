@@ -28,6 +28,4 @@ struct HeapTreeNode {
 
 HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets, double *centroid, int *num_hash_buckets);
 
-double *LSH_probing(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS, double *centroid, double *distanceB4Probing);
-
 #endif //LSH_PROBING_LSH_H

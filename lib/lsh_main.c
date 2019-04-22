@@ -9,17 +9,8 @@
 #include "lsh_main.h"
 #include "utils.h"
 #include "lsh.h"
+#include "lsh_search.h"
 #include <time.h>
-
-double *generateDataSet(int dim, int n_data) {
-    double *data = (double *) malloc(sizeof(double) * dim * n_data);
-
-    for (int i = 0; i < dim * n_data; ++i) {
-        data[i] = (double) rand() / RAND_MAX;
-    }
-
-    return data;
-}
 
 double z1;
 
@@ -170,8 +161,8 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 }
 
 int LSH_main(int dim, int n_data, double *data,
-             double ***hashTables, HashBucket *buckets, double *centroid, double *result,
-             double *datum, FILE *file) {
+             double ***hashTables, HashBucket *buckets, double *centroid, int num_queries, double **queries,
+             FILE *file) {
     clock_t start, end;
     double generateBucketsTime, searchTime;
     double *distanceB4Probing = (double *) malloc(sizeof(double));
@@ -180,6 +171,9 @@ int LSH_main(int dim, int n_data, double *data,
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
     double *w_ptr = (double *) malloc(sizeof(double));
+
+    double *result = (double *) calloc(dim, sizeof(double));
+
     const int NUM_PERTURBATION_VECTORS = 100;
     centroid = (double *) calloc(dim, sizeof(double));
 
@@ -200,7 +194,7 @@ int LSH_main(int dim, int n_data, double *data,
     end = clock();
     generateBucketsTime = end - start;
 
-    printf("hash buckets: \n");
+//    printf("hash buckets: \n");
 
 //    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
@@ -208,14 +202,11 @@ int LSH_main(int dim, int n_data, double *data,
 
     getchar();
 
-//    printf("Query point: \n");
-//    printDataSet(dim, 1, datum);
-
     start = clock();
 
 
-    result = LSH_probing(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, datum, NUM_PERTURBATION_VECTORS, centroid,
-                         distanceB4Probing);
+    _LSH_search(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, queries[0], NUM_PERTURBATION_VECTORS, centroid,
+                         distanceB4Probing, result);
     end = clock();
 
     searchTime = end - start;
@@ -223,22 +214,37 @@ int LSH_main(int dim, int n_data, double *data,
     fprintf(file,
             "- dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance before probing: %f, distance after probing: %f",
             dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, *num_hash_buckets, generateBucketsTime, searchTime, *distanceB4Probing,
-            distanceOfTwoPoints(dim, result, datum));
+            distanceOfTwoPoints(dim, result, queries[0]));
 
-    //second chunk comes in
-//    buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, dataSets[1], buckets, centroid);
-//    numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
-//    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+    //verify distance
+    int closestIdx = 0;
+    double closestDistance = MAXDOUBLE;
 
-//    printf("Result: \n");
-//    printDataSet(dim, 1, result);
-//    getchar();
+    for (int i = 0; i < n_data; ++i) {
+        double *ele = getElementAtIndex(i, dim, n_data, data);
+        double distance = distanceOfTwoPoints(dim, queries[0], ele);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIdx = i;
+            for (int j = 0; j < dim; ++j) {
+                result[j] = ele[j];
+            }
+        }
+//        printf("data %d: %f \n", i, distance);
+        free(ele);
+    }
 
-//    generatePerturbationVectors(dim, *m_ptr, *w_ptr,
-//                                5, query, hashTables[0]);
+    if (result == NULL) {
+        printf("result = NULL");
+    } else {
+        printf("Closest data point: \n");
+//        printDataSet(dim, 1, result);
+        closestDistance = distanceOfTwoPoints(dim, queries[0], result);
+    }
 
-//    printf("Distance of query to data points in data set: \n");
+    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
+    fprintf(file, " exact closest distance: %f \n", closestDistance);
 
 //verify distance
 

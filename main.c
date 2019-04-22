@@ -73,12 +73,7 @@ double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
     return dataSets;
 }
 
-double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
-    double **dataSets = (double **) malloc(num_data_sets * sizeof(double *));
-    for (int i = 0; i < num_data_sets; ++i) {
-        dataSets[i] = (double *) calloc(dim * n_data, sizeof(double));
-    }
-
+int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, int num_queries, double **queries) {
     FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
     char line[1024];
@@ -92,64 +87,56 @@ double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
                 break;
         }
 
-        fread(query, sizeof(double), dim, file);
+        for (int i = 0; i < num_queries; ++i) {
+            fread(queries[i], sizeof(double), dim, file);
+            if (feof(file))
+                break;
+        }
         fclose(file);
     } else {
         printf("Failed to open file. ");
     }
 
-    return dataSets;
+    return 0;
 }
 
 int main() {
     srand(1);
     const int dim = 29;
-    const int n_data = 100000;
-    const int NUM_DATA_SETS = 3;
+    const int num_data_points = 1100000;
+    const int num_queries = num_data_points / 100;
+    const int n_data = num_data_points - num_queries;
+    const int NUM_DATA_SETS = 1;
 
-    double *query, *result, *centroid, ***hashTables;
-    query = (double *) malloc(dim * sizeof(double));
-    result = (double *) malloc(dim * sizeof(double));
+    double *query, *centroid, ***hashTables;
 
-    double **dataSets = readBinaryFile(n_data, dim, NUM_DATA_SETS, query);
-    double *data = dataSets[1];
+    double **dataSets = (double **) malloc(NUM_DATA_SETS * sizeof(double *));
+    for (int i = 0; i < NUM_DATA_SETS; ++i) {
+        dataSets[i] = (double *) calloc(dim * n_data, sizeof(double));
+    }
+
+    double **queries = (double **) malloc(num_queries * sizeof(double *));
+    for (int i = 0; i < num_queries; ++i) {
+        queries[i] = (double *) calloc(dim, sizeof(double));
+    }
+
+    //read data
+    readBinaryFile(n_data, dim,
+            NUM_DATA_SETS, dataSets, num_queries, queries);//outputs
+
+
+    double *data = dataSets[0];
 
 //    printDataSet(dim, n_data, data);
     HashBucket *buckets = malloc(sizeof(HashBucket));
 
+
     FILE *oF = fopen("output.txt", "a");
 
 
-    LSH_main(dim, n_data, data, hashTables, buckets, centroid, result, query, oF);
+    LSH_main(dim, n_data, data, hashTables, buckets, centroid, num_queries, queries, oF);
 
-//verify distance
-    int closestIdx = 0;
-    double closestDistance = MAXDOUBLE;
 
-    for (int i = 0; i < n_data; ++i) {
-        double *ele = getElementAtIndex(i, dim, n_data, data);
-        double distance = distanceOfTwoPoints(dim, query, ele);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIdx = i;
-            for (int j = 0; j < dim; ++j) {
-                result[j] = ele[j];
-            }
-        }
-//        printf("data %d: %f \n", i, distance);
-        free(ele);
-    }
-
-    if (result == NULL) {
-        printf("result = NULL");
-    } else {
-        printf("Closest data point: \n");
-//        printDataSet(dim, 1, result);
-        closestDistance = distanceOfTwoPoints(dim, query, result);
-    }
-
-    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
-    fprintf(oF, " exact closest distance: %f \n", closestDistance);
     fclose(oF);
 
     //verify variables
