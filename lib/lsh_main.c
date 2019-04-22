@@ -161,7 +161,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     *dataSpread = distance;
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = 1.2 * distance;
+    *w_ptr = distance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -193,16 +193,18 @@ int LSH_main(int dim, int n_data, double *data,
 //    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
     start = clock();
 
-    *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid);
+    int *num_hash_buckets = (int *)malloc(sizeof(int));
+
+    *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid, num_hash_buckets);
 
     end = clock();
     generateBucketsTime = end - start;
 
     printf("hash buckets: \n");
 
-    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
+//    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
-    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+    printf("number of buckets: %d \n Enter to continue \n", *num_hash_buckets);
 
     getchar();
 
@@ -220,7 +222,7 @@ int LSH_main(int dim, int n_data, double *data,
 
     fprintf(file,
             "- dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance before probing: %f, distance after probing: %f",
-            dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, numBuckets, generateBucketsTime, searchTime, *distanceB4Probing,
+            dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, *num_hash_buckets, generateBucketsTime, searchTime, *distanceB4Probing,
             distanceOfTwoPoints(dim, result, datum));
 
     //second chunk comes in

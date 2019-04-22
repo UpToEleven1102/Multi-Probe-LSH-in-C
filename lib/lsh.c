@@ -10,10 +10,11 @@
 
 HashBucket *hashBuckets = NULL;
 
-int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid) {
+int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid, int *num_hash_buckets) {
     int **hashValues = calculateHashValues(dim, l, m, w, centroid, hashTables, ele);
 
     if (hashBuckets == NULL) {
+        *num_hash_buckets = *num_hash_buckets + 1;
         hashBuckets = (HashBucket *) malloc(sizeof(HashBucket));
         hashBuckets->hashValues = hashValues;
         LinkedList *head = (LinkedList *) malloc(sizeof(LinkedList));
@@ -37,6 +38,8 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, d
         ite = ite->next;
     }
 
+    *num_hash_buckets = *num_hash_buckets + 1;
+
     HashBucket *bucket = (HashBucket *) malloc(sizeof(HashBucket));
     bucket->hashValues = hashValues;
     LinkedList *head = (LinkedList *) malloc(sizeof(LinkedList));
@@ -51,11 +54,12 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, d
 }
 
 HashBucket *LSH(int dim, int n_data, int l, int m, double w, double ***hashTables, double *data, HashBucket *buckets,
-                double *centroid) {
+                double *centroid, int* num_hash_buckets) {
+    *num_hash_buckets = 0;
     hashBuckets = buckets;
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
-        insert(dim, l, m, w, hashTables, ele, centroid);
+        insert(dim, l, m, w, hashTables, ele, centroid, num_hash_buckets);
     }
 
     return hashBuckets;
