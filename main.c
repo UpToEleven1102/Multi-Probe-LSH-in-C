@@ -104,7 +104,7 @@ double **readBinaryFile(int n_data, int dim, int num_data_sets, double *query) {
 int main() {
     srand(1);
     const int dim = 29;
-    const int n_data = 100000;
+    const int n_data = 1000000;
     const int NUM_DATA_SETS = 3;
 
     double *query, *result, *centroid, ***hashTables;

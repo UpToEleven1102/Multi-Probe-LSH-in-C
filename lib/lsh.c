@@ -221,61 +221,63 @@ struct HeapTreeNode *expandHeap(struct HeapTreeNode *ele, struct pairZ *zs) {
 int **probing(int numOfVectors, int dim, int l, int m, double w,
               double *query, double **hashFuncs) {
     int **perturbationVectors = (int **) malloc(numOfVectors * sizeof(int *));
-    //find 2M array
-    struct pairZ twoM[2 * m];
 
-    int counter = 0;
-    for (int i = 0; i < m; ++i) {
-        struct pairZ z1 = {.x = distanceToBoundary(dim, w, query, hashFuncs[i], -1), .i = i, .r = -1};
-        twoM[counter++] = z1;
-        struct pairZ z2 = {.x = distanceToBoundary(dim, w, query, hashFuncs[i], 1), .i = i, .r = 1};
-        twoM[counter++] = z2;
-    }
 
-//    for (int i = 0; i < 2 * m; ++i) {
-//        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+//    //find 2M array
+//    struct pairZ twoM[2 * m];
+//
+//    int counter = 0;
+//    for (int i = 0; i < m; ++i) {
+//        struct pairZ z1 = {.x = distanceToBoundary(dim, w, query, hashFuncs[i], -1), .i = i, .r = -1};
+//        twoM[counter++] = z1;
+//        struct pairZ z2 = {.x = distanceToBoundary(dim, w, query, hashFuncs[i], 1), .i = i, .r = 1};
+//        twoM[counter++] = z2;
 //    }
-
-    for (int i = 0; i < 2 * m; ++i) {
-        for (int j = i + 1; j < 2 * m; ++j) {
-            struct pairZ temp = twoM[i];
-            if (twoM[j].x < temp.x) {
-                twoM[i] = twoM[j];
-                twoM[j] = temp;
-            }
-        }
-    }
-
-
+//
+////    for (int i = 0; i < 2 * m; ++i) {
+////        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+////    }
+//
 //    for (int i = 0; i < 2 * m; ++i) {
-//        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+//        for (int j = i + 1; j < 2 * m; ++j) {
+//            struct pairZ temp = twoM[i];
+//            if (twoM[j].x < temp.x) {
+//                twoM[i] = twoM[j];
+//                twoM[j] = temp;
+//            }
+//        }
 //    }
-
-    //generate Heap
-    int *a0 = (int *) malloc(sizeof(int));
-    a0[0] = 0;
-
-    struct HeapTreeNode *heap = &((struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
-                                                                                                       twoM), .left=NULL, .right=NULL, .parent=NULL});
-    //generate perturbation vectors
-    for (int i = 0; i < numOfVectors; ++i) {
-        struct HeapTreeNode *minA = NULL;
-        do {
-            //extract minHeap
-            minA = minHeap(&heap);
-
-            struct HeapTreeNode *shifted = shiftHeap(minA, twoM);
-            insertEleHeap(&heap, NULL, &shifted);
-            struct HeapTreeNode *expanded = expandHeap(minA, twoM);
-            insertEleHeap(&heap, NULL, &expanded);
-        } while (!isValid(minA, 2 * m));
-        perturbationVectors[i] = (int *) malloc(m * sizeof(int));
-        for (int j = 0; j < minA->length; ++j) {
-            perturbationVectors[i][twoM[minA->data[j]].i] = twoM[minA->data[j]].r;
-        }
-        free(minA->data);
-        free(minA);
-    }
+//
+//
+////    for (int i = 0; i < 2 * m; ++i) {
+////        printf("%f - %d \n", twoM[i].x, twoM[i].i);
+////    }
+//
+//    //generate Heap
+//    int *a0 = (int *) malloc(sizeof(int));
+//    a0[0] = 0;
+//
+//    struct HeapTreeNode *heap = &((struct HeapTreeNode) {.data = a0, .length=1, .score = calculateScore(a0, 1,
+//                                                                                                       twoM), .left=NULL, .right=NULL, .parent=NULL});
+//    //generate perturbation vectors
+//    for (int i = 0; i < numOfVectors; ++i) {
+//        struct HeapTreeNode *minA = NULL;
+//        do {
+//            //extract minHeap
+//            minA = minHeap(&heap);
+//
+//            struct HeapTreeNode *shifted = shiftHeap(minA, twoM);
+//            insertEleHeap(&heap, NULL, &shifted);
+//            struct HeapTreeNode *expanded = expandHeap(minA, twoM);
+//            insertEleHeap(&heap, NULL, &expanded);
+//        } while (!isValid(minA, 2 * m));
+//        perturbationVectors[i] = (int *) malloc(m * sizeof(int));
+//        for (int j = 0; j < minA->length; ++j) {
+//            perturbationVectors[i][twoM[minA->data[j]].i] = twoM[minA->data[j]].r;
+//        }
+//        free(minA->data);
+//        free(minA);
+//    }
 
     printf("perturbation vectors: \n");
     for (int i = 0; i < numOfVectors; ++i) {

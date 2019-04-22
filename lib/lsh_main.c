@@ -97,8 +97,8 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *l_ptr = *m_ptr * 3;
 
-//    *l_ptr = 2 * *m_ptr;
-    *l_ptr = 1;
+    *l_ptr = 2 * *m_ptr;
+//    *l_ptr = 1;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -161,7 +161,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     *dataSpread = distance;
 //    *w_ptr = _mean * 1.5;
 
-    *w_ptr = distance;
+    *w_ptr = 1.2 * distance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);
@@ -202,9 +202,9 @@ int LSH_main(int dim, int n_data, double *data,
 
     int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
 
-//    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
+    printf("number of buckets: %d \n Enter to continue \n", numBuckets);
 
-//    getchar();
+    getchar();
 
 //    printf("Query point: \n");
 //    printDataSet(dim, 1, datum);

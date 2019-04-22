@@ -103,8 +103,8 @@ int **calculateHashValues(int dim, int l, int m, double w, double *centroid, dou
         hashValues[i] = (int *) malloc(m * sizeof(int));
         for (int j = 0; j < m; ++j) {
             b = innerProduct(hashTables[i][j], centroid, dim);
-//            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim) + b) / w);
-            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim)) / w);
+            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim) + b) / w);
+//            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim)) / w);
         }
     }
 
@@ -136,7 +136,6 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
                 printf("%d \n", ite->hashValues[i][j]);
             }
         }
-
 
 //        printf("Elements: \n");
 
