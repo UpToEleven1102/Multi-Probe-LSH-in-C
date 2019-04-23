@@ -9,7 +9,7 @@
 #include "utils.h"
 
 
-double distanceOfTwoPoints(int dim, double *point1, double *point2) {
+double distanceOfTwoPoints(int dim, const double *point1, const double *point2) {
     double distance = 0;
 
     for (int i = 0; i < dim; ++i) {
@@ -87,6 +87,24 @@ int calculateHashValue(int dim, double w, double *ele, double *hashFunc, double 
 
     return (int) ((innerProduct(ele, hashFunc, dim) + b)/ w);
 }
+
+double calculateDistanceToBucket(int dim, int l, int m, double w, int **hashVal, int **bucketHashVal, double *query, double ***hashTables, double *centroid) {
+    double distance = 0;
+
+    for (int i = 0; i < l; ++i) {
+        for (int j = 0; j < m; ++j) {
+            int steps = (hashVal[i][j] - bucketHashVal[i][j]);
+            if (abs(steps) > 0){
+                distance += (abs(steps) - 1) * w;
+            }
+
+            distance = distance + distanceToBoundary(dim, w, query, hashTables[i][j], centroid, steps); // + distance to the boundary
+        }
+    }
+
+    return distance;
+}
+
 
 //b = centroid * hash functions??????? data dependent
 int calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele, int **hashValues) {

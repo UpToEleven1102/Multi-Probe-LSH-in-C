@@ -29,7 +29,7 @@ bool compareHashValues(int l, int m, int **hashValue1, int **hashValue2);
 
 //bool isEqualArrays(int dim, const double *arr1, const double *arr2);
 
-double distanceOfTwoPoints(int dim, double *point1, double *point2);
+double distanceOfTwoPoints(int dim, const double *point1, const double *point2);
 
 double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
@@ -40,6 +40,8 @@ double distanceToBoundary(int dim, double w, double *query, double *hashFunc, do
 int calculateHashValue(int dim, double w, double *ele, double *hashFunc, double *centroid);
 
 int calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele, int **hashValues);
+
+double calculateDistanceToBucket(int dim, int l, int m, double w, int **hashVal, int **bucketHashVal, double *query, double ***hashTables, double *centroid);
 
 void printHashTables(int dim, int l, int m, double ***tables);
 

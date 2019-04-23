@@ -9,12 +9,13 @@
 #include "lsh_search.h"
 #include "utils.h"
 
-double search(int dim, HashBucket *bucket, double *query, double minDistance, double *result_ptr) {
+double search(int dim, HashBucket *bucket, double *query, double minDistance, double *result_ptr, int* counter) {
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
     LinkedList *data = bucket->head;
     while (data->next) {
+        *counter = *counter +1;
         double currentDistance = distanceOfTwoPoints(dim, data->data, query);
         if (distance > currentDistance) {
             distance = currentDistance;
@@ -29,34 +30,19 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
         for (int i = 0; i < dim; ++i) {
             result_ptr[i] = result[i];
         }
+        free(result);
         return distance;
     }
-
+    free(result);
     return minDistance;
 }
-
-double calculateDistanceToBucket(int dim, int l, int m, double w, int **hashVal, int **bucketHashVal, double *query, double ***hashTables, double *centroid) {
-    double distance = 0;
-
-    for (int i = 0; i < l; ++i) {
-        for (int j = 0; j < m; ++j) {
-            int steps = (hashVal[i][j] - bucketHashVal[i][j]);
-            if (abs(steps) > 0){
-                distance += (abs(steps) - 1) * w;
-            }
-
-            distance = distance + distanceToBoundary(dim, w, query, hashTables[i][j], centroid, steps); // + distance to the boundary
-        }
-    }
-
-    return distance;
-}
-
 
 int
 _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, int num_buckets, double *query,
             double *centroid, double *distanceB4Probing, double *result) {
     double distance = MAXDOUBLE;
+    int* num_checked_data_points = (int*)calloc(1, sizeof(int));
+    *num_checked_data_points = 0;
     int num_probing_buckets = num_buckets * 5 / 100;
 
     int **hashVal = (int**)malloc(l * sizeof(int*));
@@ -121,24 +107,29 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
         }
 
         if (!found && compareHashValues(l, m, hashVal, ite->hashValues)) {
-            printf("Found %f \n", newBucketHashVal->score);
-            distance = search(dim, ite, query, MAXDOUBLE, result);
+            distance = search(dim, ite, query, MAXDOUBLE, result, num_checked_data_points);
             found = true;
         }
         ite = ite->next;
     }
 
     *distanceB4Probing = distance;
-    printf("Distance b4 probing: %f \n", *distanceB4Probing);
+    printf("Distance b4 probing: %f, checked: %d \n", *distanceB4Probing, *num_checked_data_points);
 
 
     //probe buckets
     BucketHashVal * iteHashVal = bucketHashVal->next;
     int counter = 0;
-
     while(iteHashVal != NULL) {
         if (counter++<num_probing_buckets) {
-//            search(dim, )
+            ite = buckets;
+            while(ite != NULL) {
+                if (compareHashValues(l, m, hashVal, ite->hashValues)) {
+                    distance = search(dim, ite, query, distance, result, num_checked_data_points);
+                    break;
+                }
+                ite = ite->next;
+            }
         }
 
 //        printf("%d - score - %f \n", ++counter, iteHashVal->score);
@@ -151,6 +142,8 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
         }
         iteHashVal = iteHashVal->next;
     }
+
+    printf("distance after probing: %f, checked : %d \n", distance, *num_checked_data_points);
 
     getchar();
 
