@@ -8,7 +8,7 @@
 #include "utils.h"
 
 struct BucketHashVal {
-    double *value;
+    int **value;
     double score;
     struct BucketHashVal *next;
     struct BucketHashVal *prev;

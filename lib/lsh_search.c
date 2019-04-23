@@ -5,6 +5,7 @@
 #include <values.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <stdlib.h>
 #include "lsh_search.h"
 #include "utils.h"
 
@@ -34,6 +35,24 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
     return minDistance;
 }
 
+double calculateDistanceToBucket(int dim, int l, int m, double w, int **hashVal, int **bucketHashVal, double *query, double ***hashTables, double *centroid) {
+    double distance = 0;
+
+    for (int i = 0; i < l; ++i) {
+        for (int j = 0; j < m; ++j) {
+            int steps = (hashVal[i][j] - bucketHashVal[i][j]);
+            if (abs(steps) > 0){
+                distance += (abs(steps) - 1) * w;
+            }
+
+            distance = distance + distanceToBoundary(dim, w, query, hashTables[i][j], centroid, steps); // + distance to the boundary
+        }
+    }
+
+    return distance;
+}
+
+
 int
 _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, int num_buckets, double *query,
             double *centroid, double *distanceB4Probing, double *result) {
@@ -48,17 +67,86 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
 
     HashBucket *ite = buckets;
 
+    BucketHashVal *bucketHashVal = NULL;
+
+    bool found = false;
+    BucketHashVal *newBucketHashVal;
     while (ite != NULL) {
-        if (compareHashValues(l, m, hashVal, ite->hashValues)) {
+        newBucketHashVal = (BucketHashVal*)malloc(sizeof(BucketHashVal));
+        newBucketHashVal->next = NULL;
+        newBucketHashVal->prev = NULL;
+        newBucketHashVal->score = calculateDistanceToBucket(dim, l, m, w, hashVal, ite->hashValues, query, hashTables, centroid);
+        newBucketHashVal->value = (int **)malloc(l * sizeof(int*));
+
+        for (int i = 0; i < l; ++i) {
+            newBucketHashVal->value[i] = (int*)calloc(m, sizeof(int));
+            for (int j = 0; j < m; ++j) {
+                newBucketHashVal->value[i][j] = ite->hashValues[i][j];
+            }
+        }
+
+        if (bucketHashVal == NULL) {
+            bucketHashVal = newBucketHashVal;
+        } else {
+            BucketHashVal *iteHashVal = bucketHashVal;
+
+
+            while(iteHashVal != NULL) {
+                if (iteHashVal->next == NULL) {
+                    iteHashVal->next = newBucketHashVal;
+                    newBucketHashVal->prev = iteHashVal;
+                    break;
+                }
+
+                if (iteHashVal->score > newBucketHashVal->score) {
+                    if (iteHashVal->prev == NULL) {
+                        iteHashVal->prev = newBucketHashVal;
+                        newBucketHashVal->next = iteHashVal;
+                        bucketHashVal = newBucketHashVal;
+                        break;
+                    }
+
+                    iteHashVal->prev->next = newBucketHashVal;
+                    newBucketHashVal->prev = iteHashVal ->prev;
+                    newBucketHashVal->next = iteHashVal;
+                    iteHashVal->prev = newBucketHashVal;
+                    break;
+                }
+                iteHashVal = iteHashVal->next;
+            }
+
+
+        }
+
+        if (!found && compareHashValues(l, m, hashVal, ite->hashValues)) {
+            printf("Found %f \n", newBucketHashVal->score);
             distance = search(dim, ite, query, MAXDOUBLE, result);
-            break;
+            found = true;
         }
         ite = ite->next;
     }
 
     *distanceB4Probing = distance;
+    printf("Distance b4 probing: %f \n", *distanceB4Probing);
 
-    printf("Closest distance b4 probing: %f \n", distance);
+
+    //probe buckets
+    BucketHashVal * iteHashVal = bucketHashVal;
+    int counter = 0;
+
+    while(iteHashVal != NULL) {
+        printf("%d - score - %f \n", ++counter, iteHashVal->score);
+        for (int i = 0; i < l; ++i) {
+            free(iteHashVal->value[i]);
+        }
+        free(iteHashVal->value);
+        if(iteHashVal->prev!=NULL) {
+            free(iteHashVal->prev);
+        }
+        iteHashVal = iteHashVal->next;
+    }
+
+    getchar();
 
     printDataSet(dim, 1, result);
     for (int i = 0; i < l; ++i) {

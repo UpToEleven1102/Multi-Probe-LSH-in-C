@@ -68,30 +68,24 @@ void printDataSet(int dim, int n_data, const double *data) {
     }
 }
 
-double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r) {
+double distanceToBoundary(int dim, double w, double *query, double *hashFunc, double *centroid, int r) {
     if (r == 0) return 0;
-    double distanceToTheLeft = innerProduct(query, hashFunc, dim) - calculateHashValue(dim, w, query, hashFunc) * w;
 
-    if (r == -1)
+    double b = innerProduct(hashFunc, centroid, dim);
+
+    double distanceToTheLeft = (innerProduct(query, hashFunc, dim) + b) - calculateHashValue(dim, w, query, hashFunc, centroid) * w;
+
+    if (r < 0)
         return distanceToTheLeft;
-    if (r == 1)
+    if (r > 0)
         return w - distanceToTheLeft;
-    return 0;
-
-}
-
-double scorePerturbationVector(int dim, int m, double w, double *query, double **hashTable, int *vector) {
-    double score = 0;
-    for (int i = 0; i < m; ++i) {
-        double distance = distanceToBoundary(dim, w, query, hashTable[i], vector[i]);
-        score += distance * distance;
-    }
-    return score;
 }
 
 
-int calculateHashValue(int dim, double w, double *ele, double *hashFunc) {
-    return (int) (innerProduct(ele, hashFunc, dim)/ w);
+int calculateHashValue(int dim, double w, double *ele, double *hashFunc, double *centroid) {
+    double b = innerProduct(hashFunc, centroid, dim);
+
+    return (int) ((innerProduct(ele, hashFunc, dim) + b)/ w);
 }
 
 //b = centroid * hash functions??????? data dependent

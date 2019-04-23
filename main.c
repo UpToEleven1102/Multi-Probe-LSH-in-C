@@ -108,8 +108,6 @@ int main() {
     const int n_data = num_data_points - num_queries;
     const int NUM_DATA_SETS = 1;
 
-    double *query, *centroid, ***hashTables;
-
     double **dataSets = (double **) malloc(NUM_DATA_SETS * sizeof(double *));
     for (int i = 0; i < NUM_DATA_SETS; ++i) {
         dataSets[i] = (double *) calloc(dim * n_data, sizeof(double));
@@ -134,7 +132,7 @@ int main() {
     FILE *oF = fopen("output.txt", "a");
 
 
-    LSH_main(dim, n_data, data, hashTables, buckets, centroid, num_queries, queries, oF);
+    LSH_main(dim, n_data, data, buckets, num_queries, queries, oF);
 
 
     fclose(oF);

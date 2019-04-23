@@ -8,6 +8,5 @@
 #include "utils.h"
 #include <stdio.h>
 
-int LSH_main(int dim, int n_data, double *data,
-             double ***hashTables, HashBucket *buckets, double *centroid, int num_queries, double **queries, FILE *file);
+int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_queries, double **queries, FILE *file);
 #endif //LSH_PROBING_LSH_MAIN_H

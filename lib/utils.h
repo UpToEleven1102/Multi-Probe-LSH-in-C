@@ -35,9 +35,9 @@ double *getElementAtIndex(int idx, int dim, int n_data, const double *data);
 
 double scorePerturbationVector(int dim, int m, double w, double *query, double **hashTable, int *vector);
 
-double distanceToBoundary(int dim, double w, double *query, double *hashFunc, int r);
+double distanceToBoundary(int dim, double w, double *query, double *hashFunc, double *centroid, int r);
 
-int calculateHashValue(int dim, double w, double *ele, double *hashFunc);
+int calculateHashValue(int dim, double w, double *ele, double *hashFunc, double *centroid);
 
 int calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele, int **hashValues);
 

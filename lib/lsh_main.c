@@ -160,8 +160,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     free(buff);
 }
 
-int LSH_main(int dim, int n_data, double *data,
-             double ***hashTables, HashBucket *buckets, double *centroid, int num_queries, double **queries,
+int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_queries, double **queries,
              FILE *file) {
     clock_t start, end;
     double generateBucketsTime, searchTime;
@@ -174,7 +173,7 @@ int LSH_main(int dim, int n_data, double *data,
 
     double *result = (double *) calloc(dim, sizeof(double));
 
-    centroid = (double *) calloc(dim, sizeof(double));
+    double *centroid = (double *) calloc(dim, sizeof(double));
 
     double *mean = (double *) malloc(dim * sizeof(double));
     double *stdDev = (double *) malloc(dim * sizeof(double));
@@ -182,7 +181,7 @@ int LSH_main(int dim, int n_data, double *data,
     initParameters(l_ptr, m_ptr, w_ptr, mean, stdDev, dim, n_data, data, centroid, dataSpread);
 //    printf("l_ptr - %d, m_ptr - %d, w_ptr - %f, dim - %d \n", *l_ptr, *m_ptr, *w_ptr, dim);
 
-    hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
+    double ***hashTables = generateHashTables(*l_ptr, *m_ptr, dim, mean, stdDev);
 //    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
     start = clock();
 
