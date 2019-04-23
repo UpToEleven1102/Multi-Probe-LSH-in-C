@@ -146,16 +146,17 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
             }
         }
 
-//        printf("Elements: \n");
+        printf("Elements: \n");
 
-//        LinkedList *listIte = ite->head;
-//
-//        while (listIte != NULL) {
-//            printDataSet(dim, 1, listIte->data);
-//            listIte = listIte->next;
-//        }
-//
-//        free(listIte);
+        LinkedList *listIte = ite->head;
+        int counter2 = 0;
+        while (listIte != NULL) {
+            printf("%d ----------\n", counter2++);
+            printDataSet(dim, 1, listIte->data);
+            listIte = listIte->next;
+        }
+
+        free(listIte);
         ite = ite->next;
     }
 

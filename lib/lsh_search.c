@@ -44,6 +44,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
     int* num_checked_data_points = (int*)calloc(1, sizeof(int));
     *num_checked_data_points = 0;
     int num_probing_buckets = num_buckets * 5 / 100;
+    printf("%d ----\n", num_probing_buckets);
 
     int **hashVal = (int**)malloc(l * sizeof(int*));
 
@@ -118,7 +119,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
 
 
     //probe buckets
-    BucketHashVal * iteHashVal = bucketHashVal->next;
+    BucketHashVal *iteHashVal = bucketHashVal->next;
     int counter = 0;
     while(iteHashVal != NULL) {
         if (counter++<num_probing_buckets) {

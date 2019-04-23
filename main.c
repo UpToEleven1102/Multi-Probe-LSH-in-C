@@ -103,7 +103,7 @@ int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, in
 int main() {
     srand(1);
     const int dim = 29;
-    const int num_data_points = 1100000;
+    const int num_data_points = 400;
     const int num_queries = num_data_points / 100;
     const int n_data = num_data_points - num_queries;
     const int NUM_DATA_SETS = 1;

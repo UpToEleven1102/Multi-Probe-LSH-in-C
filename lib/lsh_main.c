@@ -193,8 +193,9 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
     generateBucketsTime = end - start;
 
 //    printf("hash buckets: \n");
-
+//
 //    int numBuckets = printHashBuckets(dim, *l_ptr, *m_ptr, buckets);
+
 
     printf("number of buckets: %d \n Enter to continue \n", *num_hash_buckets);
 
