@@ -13,17 +13,17 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
     double distance = MAXDOUBLE;
     double *result = (double *) malloc(dim * sizeof(double));
 
-    LinkedList *data = bucket->head;
-    while (data->next) {
+    LinkedList *ite = bucket->head;
+    while (ite != NULL) {
         *counter = *counter +1;
-        double currentDistance = distanceOfTwoPoints(dim, data->data, query);
+        double currentDistance = distanceOfTwoPoints(dim, ite->data, query);
         if (distance > currentDistance) {
             distance = currentDistance;
             for (int i = 0; i < dim; ++i) {
-                result[i] = data->data[i];
+                result[i] = ite->data[i];
             }
         }
-        data = data->next;
+        ite = ite->next;
     }
 
     if (distance < minDistance) {
@@ -125,7 +125,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
         if (counter++<num_probing_buckets) {
             ite = buckets;
             while(ite != NULL) {
-                if (compareHashValues(l, m, hashVal, ite->hashValues)) {
+                if (compareHashValues(l, m, iteHashVal->value, ite->hashValues)) {
                     distance = search(dim, ite, query, distance, result, num_checked_data_points);
                     break;
                 }

@@ -187,7 +187,7 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
 
     int *num_hash_buckets = (int *)malloc(sizeof(int));
 
-    *buckets = *LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid, num_hash_buckets);
+    buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid, num_hash_buckets);
 
     end = clock();
     generateBucketsTime = end - start;
