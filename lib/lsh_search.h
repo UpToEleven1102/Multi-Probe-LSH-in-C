@@ -7,6 +7,14 @@
 
 #include "utils.h"
 
-int _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, double *query, int NUM_VECTORS,
-            double *centroid, double *distanceB4Probing, double *result);
+struct BucketHashVal {
+    double *value;
+    double score;
+    struct BucketHashVal *next;
+    struct BucketHashVal *prev;
+};
+
+typedef struct BucketHashVal BucketHashVal;
+
+int _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, int num_hash_buckets, double *query, double *centroid, double *distanceB4Probing, double *result);
 #endif //LSH_PROBING_LSH_SEARCH_H

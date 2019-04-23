@@ -39,7 +39,7 @@ double distanceToBoundary(int dim, double w, double *query, double *hashFunc, in
 
 int calculateHashValue(int dim, double w, double *ele, double *hashFunc);
 
-int **calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele);
+int calculateHashValues(int dim, int l, int m, double w, double *centroid, double ***hashTables, double *ele, int **hashValues);
 
 void printHashTables(int dim, int l, int m, double ***tables);
 

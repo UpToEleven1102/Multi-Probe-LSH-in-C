@@ -174,7 +174,6 @@ int LSH_main(int dim, int n_data, double *data,
 
     double *result = (double *) calloc(dim, sizeof(double));
 
-    const int NUM_PERTURBATION_VECTORS = 100;
     centroid = (double *) calloc(dim, sizeof(double));
 
     double *mean = (double *) malloc(dim * sizeof(double));
@@ -200,22 +199,23 @@ int LSH_main(int dim, int n_data, double *data,
 
     printf("number of buckets: %d \n Enter to continue \n", *num_hash_buckets);
 
-    getchar();
-
     start = clock();
 
-
-    _LSH_search(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, queries[0], NUM_PERTURBATION_VECTORS, centroid,
+    _LSH_search(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, *num_hash_buckets, queries[0], centroid,
                          distanceB4Probing, result);
     end = clock();
 
     searchTime = end - start;
+
 
     fprintf(file,
             "- dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance before probing: %f, distance after probing: %f",
             dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, *num_hash_buckets, generateBucketsTime, searchTime, *distanceB4Probing,
             distanceOfTwoPoints(dim, result, queries[0]));
 
+
+
+    getchar();
 
     //verify distance
     int closestIdx = 0;

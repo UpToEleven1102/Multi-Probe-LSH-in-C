@@ -10,7 +10,12 @@
 HashBucket *hashBuckets = NULL;
 
 int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, double *centroid, int *num_hash_buckets) {
-    int **hashValues = calculateHashValues(dim, l, m, w, centroid, hashTables, ele);
+    int **hashValues = (int**)malloc(l * sizeof(int*));
+    for (int i = 0; i < l; ++i) {
+        hashValues[i] = (int*)malloc(m * sizeof(int));
+    }
+
+    calculateHashValues(dim, l, m, w, centroid, hashTables, ele, hashValues);
 
     if (hashBuckets == NULL) {
         *num_hash_buckets = *num_hash_buckets + 1;
