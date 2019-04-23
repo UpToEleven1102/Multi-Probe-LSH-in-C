@@ -57,6 +57,8 @@ int
 _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, int num_buckets, double *query,
             double *centroid, double *distanceB4Probing, double *result) {
     double distance = MAXDOUBLE;
+    int num_probing_buckets = num_buckets * 5 / 100;
+
     int **hashVal = (int**)malloc(l * sizeof(int*));
 
     for (int i = 0; i < l; ++i) {
@@ -131,11 +133,15 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
 
 
     //probe buckets
-    BucketHashVal * iteHashVal = bucketHashVal;
+    BucketHashVal * iteHashVal = bucketHashVal->next;
     int counter = 0;
 
     while(iteHashVal != NULL) {
-        printf("%d - score - %f \n", ++counter, iteHashVal->score);
+        if (counter++<num_probing_buckets) {
+//            search(dim, )
+        }
+
+//        printf("%d - score - %f \n", ++counter, iteHashVal->score);
         for (int i = 0; i < l; ++i) {
             free(iteHashVal->value[i]);
         }
