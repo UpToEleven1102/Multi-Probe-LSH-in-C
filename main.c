@@ -72,8 +72,8 @@ double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
 }
 
 int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, int num_queries, double **queries) {
-//    FILE *file = fopen("../data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
-    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
+    FILE *file = fopen("../data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
+//    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
 //    FILE *file = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
 
     char line[1024];
@@ -102,8 +102,8 @@ int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, in
 
 int main() {
     srand(1);
-//    const int dim = 16;
-    const int dim = 29;
+    const int dim = 16;
+//    const int dim = 29;
     const int num_data_points = 1000000;
     const int num_queries = num_data_points / 100;
     const int n_data = num_data_points - num_queries;
@@ -124,7 +124,6 @@ int main() {
             NUM_DATA_SETS, dataSets, num_queries, queries);//outputs
 
 
-    double *data = dataSets[0];
 
 //    printDataSet(dim, n_data, data);
     HashBucket *buckets = malloc(sizeof(HashBucket));
@@ -133,7 +132,7 @@ int main() {
     FILE *oF = fopen("tlc.txt", "a");
 
 
-    LSH_main(dim, n_data, data, buckets, num_queries, queries, oF);
+    LSH_main(dim, n_data, dataSets[0], buckets, num_queries, queries, oF);
 
 
     fclose(oF);
