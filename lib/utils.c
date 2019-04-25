@@ -85,7 +85,7 @@ double distanceToBoundary(int dim, double w, double *query, double *hashFunc, do
 int calculateHashValue(int dim, double w, double *ele, double *hashFunc, double *centroid) {
     double b = innerProduct(hashFunc, centroid, dim);
 
-    return (int) ((innerProduct(ele, hashFunc, dim) + b)/ w);
+    return (int) floor((innerProduct(ele, hashFunc, dim) - b)/ w);
 }
 
 double calculateDistanceToBucket(int dim, int l, int m, double w, int **hashVal, int **bucketHashVal, double *query, double ***hashTables, double *centroid) {
@@ -113,7 +113,7 @@ int calculateHashValues(int dim, int l, int m, double w, double *centroid, doubl
     for (int i = 0; i < l; ++i) {
         for (int j = 0; j < m; ++j) {
             b = innerProduct(hashTables[i][j], centroid, dim);
-            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim) + b) / w);
+            hashValues[i][j] = (int) floor((innerProduct(ele, hashTables[i][j], dim) - b) / w);
 //            hashValues[i][j] = (int) ((innerProduct(ele, hashTables[i][j], dim)) / w);
         }
     }
@@ -165,10 +165,10 @@ int printHashBuckets(int dim, int l, int m, HashBucket *buckets) {
     return counter;
 }
 
-int printHashValues(int l, int m, double **hashValue) {
+int printHashValues(int l, int m, int **hashValue) {
     for (int i = 0; i < l; ++i) {
         for (int j = 0; j < m; ++j) {
-            printf("%f \n", hashValue[i][j]);
+            printf("%d \n", hashValue[i][j]);
         }
     }
 }

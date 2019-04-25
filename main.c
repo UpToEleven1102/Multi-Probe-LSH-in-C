@@ -9,11 +9,9 @@
 #include "lib/lsh.h"
 #include "lib/lsh_main.h"
 
-//TODO: more research about number L and M, how many are needed
-//TODO: implement b
-// how large we should choose value of L, paper
-// hash functions are unit vectors?
-// hashValue formula   <a.v -b> / w. what is b??
+
+
+//TODO why so many data points get into 1 bucket
 
 //b = centroid * hash functions??????? data dependent
 
@@ -74,7 +72,9 @@ double **readCSVFile(int n_data, int dim, int num_data_sets, double *query) {
 }
 
 int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, int num_queries, double **queries) {
-    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
+    FILE *file = fopen("../data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
+//    FILE *file = fopen("../data_sets/tr_HIGGS.dat", "rb");
+//    FILE *file = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
 
     char line[1024];
     int counter = 0;
@@ -102,8 +102,9 @@ int readBinaryFile(int n_data, int dim, int num_data_sets, double **dataSets, in
 
 int main() {
     srand(1);
-    const int dim = 29;
-    const int num_data_points = 400;
+    const int dim = 16;
+//    const int dim = 28;
+    const int num_data_points = 1000000;
     const int num_queries = num_data_points / 100;
     const int n_data = num_data_points - num_queries;
     const int NUM_DATA_SETS = 1;
@@ -129,7 +130,7 @@ int main() {
     HashBucket *buckets = malloc(sizeof(HashBucket));
 
 
-    FILE *oF = fopen("output.txt", "a");
+    FILE *oF = fopen("tlc.txt", "a");
 
 
     LSH_main(dim, n_data, data, buckets, num_queries, queries, oF);

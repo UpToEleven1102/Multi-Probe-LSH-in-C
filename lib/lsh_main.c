@@ -23,7 +23,7 @@ double gaussian_rand(double mean, double stdDev, int phase) {
     const double two_pi = 2 * M_PI;
 
     if (phase == 1)
-        return z1 * stdDev + mean;
+        return z1;
 
     double u1, u2;
     do {
@@ -35,7 +35,7 @@ double gaussian_rand(double mean, double stdDev, int phase) {
     z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
     z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
 
-    return z0 * stdDev + mean;
+    return z0;
 }
 
 double *newUnitVector(int dim, double *mean, double *stdDev) {
@@ -88,13 +88,13 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *l_ptr = *m_ptr * 3;
 
-    *l_ptr = 2 * *m_ptr;
-//    *l_ptr = 1;
+//    *l_ptr = 2 * *m_ptr;
+    *l_ptr = 1;
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
         buff[i] = (double *) malloc(3 * sizeof(double));
-        buff[i][0] = 0;
+        buff[i][0] = -RAND_MAX;
         buff[i][1] = RAND_MAX;
         buff[i][2] = 0;
         stdDev[i] = 0;
@@ -118,17 +118,21 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
     }
 
     double distance = 0;
-    double maxDistance = 0;
     for (int i = 0; i < dim; ++i) {
+//        printf("%f, %f, %f \n", buff[i][0], buff[i][1], buff[i][2] );
         centroid[i] /= n_data;
         mean[i] = buff[i][2] / n_data;
         distance += (buff[i][0] - buff[i][1]) * (buff[i][0] - buff[i][1]);
-        if (maxDistance < buff[i][0] - buff[i][1]) {
-            maxDistance = buff[i][0] - buff[i][1];
-        }
+
     }
 
+//    getchar();
+
     distance = sqrt(distance / dim);
+
+//    printf("distance: %f \n", distance);
+//
+//    getchar();
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -149,8 +153,8 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
     _mean = _mean / dim;
 
-    *dataSpread = distance;
-//    *w_ptr = _mean * 1.5;
+    *dataSpread = .8 * distance;
+//    *w_ptr = _mean;
 
     *w_ptr = distance;
 
@@ -165,7 +169,7 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
     clock_t start, end;
     double generateBucketsTime, searchTime;
     double *distanceB4Probing = (double *) malloc(sizeof(double));
-    double *dataSpread = (double*) malloc(sizeof(double));
+    double *dataSpread = (double *) malloc(sizeof(double));
 
     int *l_ptr = (int *) malloc(sizeof(int));
     int *m_ptr = (int *) malloc(sizeof(int));
@@ -185,7 +189,7 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
 //    printHashTables(dim, *l_ptr, *m_ptr, hashTables);
     start = clock();
 
-    int *num_hash_buckets = (int *)malloc(sizeof(int));
+    int *num_hash_buckets = (int *) malloc(sizeof(int));
 
     buckets = LSH(dim, n_data, *l_ptr, *m_ptr, *w_ptr, hashTables, data, NULL, centroid, num_hash_buckets);
 
@@ -199,52 +203,55 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
 
     printf("number of buckets: %d \n Enter to continue \n", *num_hash_buckets);
 
-    start = clock();
+//    for (int i = 0; i < num_queries; ++i) {
+        start = clock();
+        int *num_checked_data_points = (int *) calloc(1, sizeof(int));
 
-    _LSH_search(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, *num_hash_buckets, queries[0], centroid,
-                         distanceB4Probing, result);
-    end = clock();
+        int num_check_after_probing = _LSH_search(dim, *l_ptr, *m_ptr, *w_ptr, hashTables, buckets, *num_hash_buckets,
+                                                  queries[0], centroid,
+                                                  distanceB4Probing, result, num_checked_data_points);
+        end = clock();
 
-    searchTime = end - start;
-
-
-    fprintf(file,
-            "- dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance before probing: %f, distance after probing: %f",
-            dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, *num_hash_buckets, generateBucketsTime, searchTime, *distanceB4Probing,
-            distanceOfTwoPoints(dim, result, queries[0]));
+        searchTime = end - start;
 
 
+        fprintf(file,
+                "n_data: %d, dim: %d, data spread: %f, w: %f, l: %d, m: %d, num bucket: %d, generate buckets time: %f, search time: %f, distance b4 probing: %f, after probing: %f, num data checked b4 probing: %d, after probing: %d \n",
+                n_data, dim, *dataSpread, *w_ptr, *l_ptr, *m_ptr, *num_hash_buckets, generateBucketsTime, searchTime,
+                *distanceB4Probing,
+                distanceOfTwoPoints(dim, result, queries[0]), *num_checked_data_points, num_check_after_probing);
 
-    getchar();
+//    getchar();
 
-    //verify distance
-    int closestIdx = 0;
-    double closestDistance = MAXDOUBLE;
+        //verify distance
+        int closestIdx = 0;
+        double closestDistance = MAXDOUBLE;
 
-    for (int i = 0; i < n_data; ++i) {
-        double *ele = getElementAtIndex(i, dim, n_data, data);
-        double distance = distanceOfTwoPoints(dim, queries[0], ele);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIdx = i;
-            for (int j = 0; j < dim; ++j) {
-                result[j] = ele[j];
+        for (int i = 0; i < n_data; ++i) {
+            double *ele = getElementAtIndex(i, dim, n_data, data);
+            double distance = distanceOfTwoPoints(dim, queries[0], ele);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIdx = i;
+                for (int j = 0; j < dim; ++j) {
+                    result[j] = ele[j];
+                }
             }
-        }
 //        printf("data %d: %f \n", i, distance);
-        free(ele);
-    }
+            free(ele);
+        }
 
-    if (result == NULL) {
-        printf("result = NULL");
-    } else {
-        printf("Closest data point: \n");
+        if (result == NULL) {
+            printf("result = NULL");
+        } else {
+            printf("Closest data point: \n");
 //        printDataSet(dim, 1, result);
-        closestDistance = distanceOfTwoPoints(dim, queries[0], result);
-    }
+            closestDistance = distanceOfTwoPoints(dim, queries[0], result);
+        }
 
-    printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
-    fprintf(file, " exact closest distance: %f \n", closestDistance);
+        printf("Closest idx: %d - distance: %f \n", closestIdx, closestDistance);
+        fprintf(file, " exact closest distance: %f \n", closestDistance);
+//    }
 
 //verify distance
 

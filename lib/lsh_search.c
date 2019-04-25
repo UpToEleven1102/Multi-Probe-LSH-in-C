@@ -39,9 +39,8 @@ double search(int dim, HashBucket *bucket, double *query, double minDistance, do
 
 int
 _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *buckets, int num_buckets, double *query,
-            double *centroid, double *distanceB4Probing, double *result) {
+            double *centroid, double *distanceB4Probing, double *result, int *num_checked_data_points) {
     double distance = MAXDOUBLE;
-    int* num_checked_data_points = (int*)calloc(1, sizeof(int));
     *num_checked_data_points = 0;
     int num_probing_buckets = num_buckets * 5 / 100;
     printf("%d ----\n", num_probing_buckets);
@@ -118,6 +117,10 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
     printf("Distance b4 probing: %f, checked: %d \n", *distanceB4Probing, *num_checked_data_points);
 
 
+    int *num_checked = (int*)malloc(sizeof(int));
+
+    *num_checked = *num_checked_data_points;
+
     //probe buckets
     BucketHashVal *iteHashVal = bucketHashVal->next;
     int counter = 0;
@@ -126,7 +129,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
             ite = buckets;
             while(ite != NULL) {
                 if (compareHashValues(l, m, iteHashVal->value, ite->hashValues)) {
-                    distance = search(dim, ite, query, distance, result, num_checked_data_points);
+                    distance = search(dim, ite, query, distance, result, num_checked);
                     break;
                 }
                 ite = ite->next;
@@ -144,14 +147,14 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
         iteHashVal = iteHashVal->next;
     }
 
-    printf("distance after probing: %f, checked : %d \n", distance, *num_checked_data_points);
+    printf("distance after probing: %f, checked : %d \n", distance, *num_checked);
 
-    getchar();
+//    getchar();
 
     printDataSet(dim, 1, result);
     for (int i = 0; i < l; ++i) {
         free(hashVal[i]);
     }
     free(hashVal);
-    return 0;
+    return *num_checked;
 }
