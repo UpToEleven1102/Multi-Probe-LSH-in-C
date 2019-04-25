@@ -88,8 +88,9 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *l_ptr = *m_ptr * 3;
 
-//    *l_ptr = 2 * *m_ptr;
+//    *l_ptr = *m_ptr;
     *l_ptr = 1;
+
     double **buff = (double **) malloc(dim * sizeof(double *));
 
     for (int i = 0; i < dim; ++i) {
@@ -119,20 +120,20 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
     double distance = 0;
     for (int i = 0; i < dim; ++i) {
-//        printf("%f, %f, %f \n", buff[i][0], buff[i][1], buff[i][2] );
+        printf("%f, %f, %f \n", buff[i][0], buff[i][1], buff[i][2] );
         centroid[i] /= n_data;
         mean[i] = buff[i][2] / n_data;
         distance += (buff[i][0] - buff[i][1]) * (buff[i][0] - buff[i][1]);
 
     }
 
-//    getchar();
+    getchar();
 
     distance = sqrt(distance / dim);
 
-//    printf("distance: %f \n", distance);
-//
-//    getchar();
+    printf("distance: %f \n", distance);
+
+    getchar();
 
     for (int i = 0; i < n_data; ++i) {
         double *ele = getElementAtIndex(i, dim, n_data, data);
@@ -153,7 +154,9 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
     _mean = _mean / dim;
 
-    *dataSpread = .8 * distance;
+    *dataSpread = distance;
+
+
 //    *w_ptr = _mean;
 
     *w_ptr = distance;
@@ -245,7 +248,6 @@ int LSH_main(int dim, int n_data, double *data, HashBucket *buckets, int num_que
             printf("result = NULL");
         } else {
             printf("Closest data point: \n");
-//        printDataSet(dim, 1, result);
             closestDistance = distanceOfTwoPoints(dim, queries[0], result);
         }
 

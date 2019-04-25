@@ -66,6 +66,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
         newBucketHashVal->score = calculateDistanceToBucket(dim, l, m, w, hashVal, ite->hashValues, query, hashTables, centroid);
         newBucketHashVal->value = (int **)malloc(l * sizeof(int*));
 
+        //what's wrong here
         for (int i = 0; i < l; ++i) {
             newBucketHashVal->value[i] = (int*)calloc(m, sizeof(int));
             for (int j = 0; j < m; ++j) {
@@ -129,6 +130,7 @@ _LSH_search(int dim, int l, int m, double w, double ***hashTables, HashBucket *b
             ite = buckets;
             while(ite != NULL) {
                 if (compareHashValues(l, m, iteHashVal->value, ite->hashValues)) {
+                    printf("found\n");
                     distance = search(dim, ite, query, distance, result, num_checked);
                     break;
                 }

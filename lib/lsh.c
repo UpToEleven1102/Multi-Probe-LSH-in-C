@@ -17,13 +17,6 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, d
 
     calculateHashValues(dim, l, m, w, centroid, hashTables, ele, hashValues);
 
-//    printDataSet(dim, 1, ele);
-//
-//    printHashValues(l, m, hashValues);
-//
-//    getchar();
-
-
     if (hashBuckets == NULL) {
         *num_hash_buckets = *num_hash_buckets + 1;
         hashBuckets = (HashBucket *) malloc(sizeof(HashBucket));
@@ -33,6 +26,7 @@ int insert(int dim, int l, int m, double w, double ***hashTables, double *ele, d
         head->next = NULL;
         hashBuckets->head = head;
         hashBuckets->next = NULL;
+
         return 0;
     }
 
