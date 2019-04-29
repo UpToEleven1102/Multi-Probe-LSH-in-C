@@ -78,7 +78,6 @@ double ***generateHashTables(int l, int m, int dim, double *mean, double *stdDev
     return hashTables;
 }
 
-
 //probe paremeters, write a function
 void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double *stdDev, int dim, int n_data,
                     const double *data,
@@ -161,7 +160,7 @@ void initParameters(int *l_ptr, int *m_ptr, double *w_ptr, double *mean, double 
 
 //    *w_ptr = _mean;
 
-    *w_ptr = .5 * distance;
+    *w_ptr = .6 * distance;
 
     for (int i = 0; i < dim; ++i) {
         free(buff[i]);

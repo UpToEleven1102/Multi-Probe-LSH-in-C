@@ -104,6 +104,7 @@ int main() {
     srand(1);
     const int dim = 16;
 //    const int dim = 29;
+//    const int dim = 24;
     const int num_data_points = 1000000;
     const int num_queries = num_data_points / 100;
     const int n_data = num_data_points - num_queries;
@@ -129,7 +130,7 @@ int main() {
     HashBucket *buckets = malloc(sizeof(HashBucket));
 
 
-    FILE *oF = fopen("tlc.txt", "a");
+    FILE *oF = fopen("heterogeneity.txt", "a");
 
 
     LSH_main(dim, n_data, dataSets[0], buckets, num_queries, queries, oF);
