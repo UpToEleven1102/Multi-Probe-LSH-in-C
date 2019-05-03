@@ -3,48 +3,29 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "LSH_L2.h"
+
 #define min(x,y)  	((x) < (y) ? (x) : (y))
 #define max(x,y)  	((x) > (y) ? (x) : (y))
 
 
-struct LSH_Parameters {
-    char    m_max, m,
-            L_max, L;
-    double  W_init, W ;
-    double  **hfunction, *b ; // Array sizes: hfunction[m_max*L_max][dim], b[dim]
-    // datum_hashval = <datum - b, hfunction> / W
-} ;
-
-
-struct LSH_Buckets {
-    int   nclusters, max_nclusters, max_clustersize,
-            *clustersize, *clustersize_limit ;
-//   struct LSH_Parameters *param_ptr ;
-    int **cluster_hashval ; // cluster_hashval[max_nclusters][L_max*m_max]
-    int **data_indices;     // data_indices[max_nclusters][max_clustersize]
-} ;
-
-
-struct LSH_Performance {
-    double avg_ClusteringTime, wrst_ClusteringTime,
-            avg_SearchingTime, wrst_SearchingTime,
-            avg_RelativeDist, wrst_RelativeDist, // RelativeDist = approx_distance/exact_distance
-            avg_rho , // The recall rho = 1 if closest pt in multi-probed buckets, 0 otherwise
-            tau ;     // The selectivity tau = (num pts checked) / ndata
-} ;
-
-
+/**
+ * guassian_rand
+ */
 
 
 double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
 {
-    double U, V, Z ;
+    double U, V, Z , r;
 
-    srand(1) ;
+    U = 2.0*rand()/RAND_MAX - 1.0 ;    V = 2.0*rand()/RAND_MAX - 1.0 ;
+    r = U*U + V*V ;
+    r = sqrt(-2.0 * log(r) / r) ;
+
     if(phase == 0) {
-        U = 2.0*rand()/RAND_MAX - 1.0 ;    V = 2.0*rand()/RAND_MAX - 1.0 ;
-        r = U*U + V*V ;
-        r = sqrt(-2.0 * log(r) / r) ;
+//        U = 2.0*rand()/RAND_MAX - 1.0 ;    V = 2.0*rand()/RAND_MAX - 1.0 ;
+//        r = U*U + V*V ;
+//        r = sqrt(-2.0 * log(r) / r) ;
         Z = U*r;
     }
     else {  Z = V*r ;  }
@@ -56,11 +37,13 @@ double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
 
 /**************************************************************************/
 int init_LSHparameters(int dim, int i0, int im, double *data,              // input: dataset
-                       double *centroid, double *dimMinMax, double *dimVariance         // intermediate data
+                       double *centroid, double *dimMinMax, double *dimVariance,         // intermediate data
                        double *datum, double *cluster_center[2], int cluster_size[2],   // buffers
                        struct LSH_Parameters *param_ptr)                                // output
-/*** Array sizes: datum[dim], cluster_center[2][dim], cluster_size[2][dim] ***/
+/*** Array sizes: datum[dim], cluster_center[2][dim], cluster_size[2] ***/
 {
+    srand(1);
+
     int     i, j, k, dim_maxvar ;
     char    membership, m, m_max, L, L_max ; // L is num_tables
     double  tmp, maxvar ;
@@ -106,7 +89,7 @@ int init_LSHparameters(int dim, int i0, int im, double *data,              // in
 
 
 /****** Enter initial values for some of the LSH parameters ******/
-    param_ptr->m_max = min( (int) (0.25*(im-i0)+0.5) , 12) ;
+    param_ptr->m_max = min( (int) (0.25*dim+0.5) , 12) ;
     param_ptr->L_max = 20 ;
     param_ptr->W_init = 0.0 ;
     for(j=0; j<dim; j++) {
@@ -155,7 +138,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     datum_hashval = (double *)calloc( (L_max*m_max), sizeof(double*) ) ; // buffer
 
 /****** Loop thru values of L, M, W to find the best performance parameters ******/
-    int W_count, num_Ws, W_min, W_max, W ;
+    int W_count, num_Ws, W_min, W_max ;
     struct LSH_Performance  ***performances ; // Array performances[L_max][m_max][num_Ws]
     struct LSH_Buckets *buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets)) ;
 
@@ -176,6 +159,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                 param_ptr->m = m ;
                 param_ptr->L = L ;
                 param_ptr->W = W ;
+
+                //pass performance to applyLSH
                 applyLSH(dim, i0, im, data, param_ptr,  // input
                          datum, datum_hashval,          // buffers
                          buckets_ptr) ;                 // output
@@ -188,9 +173,9 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
     // Choose the m, L, W that produce the best performance
     // NEED TO DEFINE HOW TO EVALUATE PERFORMANCE
-    param_ptr-> m = ;
-    param_ptr-> L = ;
-    param_ptr-> W = ;
+//    param_ptr-> m = ;
+//    param_ptr-> L = ;
+//    param_ptr-> W = ;
 
 /****** Deallocate memories ******/
     for(i=0; i<L_max; i++) {
@@ -213,7 +198,7 @@ int applyLSH(int dim, int i0, int im, double *data,    // input: dataset
 {
     int     i, j, k, max_nclusters, max_clustersize ;
     char    membership, m, m_max, L, L_max, ll, mm ;
-    double  tmp, w ;
+    double  tmp, W ;
 
     m = param_ptr->m ;    m_max = param_ptr->m_max ;
     L = param_ptr->L ;    L_max = param_ptr->L_max ;
@@ -232,7 +217,7 @@ int applyLSH(int dim, int i0, int im, double *data,    // input: dataset
     max_nclusters   = 8 * (int)sqrt(im-i0) ;
     max_clustersize = 1024 ;
 
-    buckets_ptr->clusterzie_limit= (int *) calloc(max_nclusters, sizeof(int)) ;
+    buckets_ptr->clustersize_limit= (int *) calloc(max_nclusters, sizeof(int)) ;
     buckets_ptr->clustersize     = (int *) calloc(max_nclusters, sizeof(int)) ;
 
     buckets_ptr->cluster_hashval = (int **) calloc(max_nclusters, sizeof(int *)) ;
@@ -298,7 +283,7 @@ int applyLSH(int dim, int i0, int im, double *data,    // input: dataset
 /*********************************************************/
 int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queries, // input
               struct LSH_Paramters *param_ptr, struct LSH_Buckets *buckets_ptr,     // input
-              doube *datum, int *datum_hashval,                                     // buffers
+              double *datum, int *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr)                              // output
 {
 
