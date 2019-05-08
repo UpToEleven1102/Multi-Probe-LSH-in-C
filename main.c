@@ -11,7 +11,12 @@
 #define max(x, y)    ((x) > (y) ? (x) : (y))
 
 
-// guassian rand: srand should be outside
+// bio_train dataset yield 0 values
+
+// use small dataset to initialize parameters? tlc_nyc ex
+
+// what is membership in init parameters?
+
 // bio_train dataset: file name should be bio_train.dat
 // line 86: should it be i0???
 
@@ -67,7 +72,7 @@ double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
 
     return Z;
 }
-
+//print dataset
 
 
 /**************************************************************************/
@@ -85,6 +90,8 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
     char membership, m, m_max, L, L_max; // L is num_tables
     double tmp, maxvar, length;
 
+    printDataSet(dim, im, data);
+
 /******** Scan dataset to find centroid, variance, and min & max of each dimension ********
  ********                      and find initial values for W, m, L                 ********/
     for (j = 0; j < dim; j++) {
@@ -94,15 +101,18 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
         dimMinMax[j] = tmp;
         dimMinMax[j + dim] = tmp;  // Min & Max pts. in dimension j
     }
+
     for (i = i0 + 1; i < im; i++) {// scan dataset to find centroid and min & max of each dimension
         memcpy(datum, data + i * dim, dim * sizeof(double));
         for (j = 0; j < dim; j++) {
             centroid[j] += datum[j];
             if (datum[j] > dimMinMax[j + dim]) dimMinMax[j + dim] = datum[j];
-            else { if (datum[j] < dimMinMax[j]) dimMinMax[j] = datum[j]; }
+            else if (datum[j] < dimMinMax[j]) dimMinMax[j] = datum[j];
             dimVariance[j] += datum[j] * datum[j];
         }
     }
+
+
     for (j = 0; j < dim; j++) {
         centroid[j] /= (im - i0);
         dimVariance[j] -= (im - i0) * centroid[j] * centroid[j];
@@ -115,12 +125,16 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
             maxvar = dimVariance[j];
             dim_maxvar = j;
         }
+
+
+
     for (i = i0; i < im; i++) {/*** Partition dataset at centroid in dim_maxvar into 2 subsets ***/
         memcpy(datum, data + dim * i, dim * sizeof(double));
         membership = ((datum[dim_maxvar] < centroid[dim_maxvar]) ? 0 : 1);
         cluster_size[membership]++;
         for (j = 0; j < dim; j++) cluster_center[membership][j] += datum[j];
     }
+
     for (k = 0; k < 2; k++) {
         if (cluster_size[k] > 0) {
             for (j = 0; j < dim; j++) cluster_center[k][j] /= (double) cluster_size[k];
@@ -131,6 +145,17 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
     }
 /*** End of Partition dataset into two subsets ***/
 
+    printf("cluster size: %d - %d \n", cluster_size[0], cluster_size[1]);
+
+    printf("cluster center: \n");
+    for (int l = 0; l < 2; ++l) {
+        printf("\n");
+        for (int n = 0; n < dim; ++n) {
+            printf("%f \n", cluster_center[l][n]);
+        }
+    }
+
+    return 0;
 
 /****** Enter initial values for some of the LSH parameters ******/
     param_ptr->m_max = min((int) (0.25 * dim + 0.5), 12);
@@ -385,6 +410,7 @@ int main() {
     if (fp != NULL) {
         fread(data, sizeof(double), dim * ndata, fp);
         fclose(fp);
+//        printDataSet(dim, ndata, data);
     } else {
         printf("failed to open file");
     }
@@ -398,8 +424,6 @@ int main() {
      if(fp!= NULL) {
          fread(data, sizeof(double), dim * ndata, fp);
          fclose(fp);
-         printDataSet(dim, ndata, data);
-
      } else {
          printf("failed to open file");
      }
@@ -431,7 +455,6 @@ int main() {
     cluster_center[1] = (double *) calloc(dim, sizeof(double));
 
 
-#if 0
     /*** Determine LSH parameters from a small dataset ***/
     int n_smalldata = ndata / 100, n_smallqueries = n_smalldata / 10;
     i0 = n_smallqueries;
@@ -439,6 +462,21 @@ int main() {
 
     init_LSHparameters(dim, i0, im, data, centroid, dimMinMax, dimVariance,
                        datum, cluster_center, cluster_size, param_ptr);
+
+    printf("centroid: ---\n");
+
+    printDataSet(dim, 1, centroid);
+
+    printf("dim min max: ---\n");
+
+    printDataSet(dim, 2, dimMinMax);
+
+    printf("dim variance: --- \n");
+
+    printDataSet(dim, 1, dimVariance);
+
+#if 0
+
     choose_LSHparameters(dim, i0, im, data, datum, nqueries, queries, param_ptr);
     /*** End of determining LSH parameters ***/
 
