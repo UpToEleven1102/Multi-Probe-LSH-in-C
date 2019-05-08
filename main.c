@@ -15,7 +15,7 @@
 
 // use small dataset to initialize parameters? tlc_nyc ex
 
-// what is membership in init parameters?
+// in generate hash functions, ll, mm <= L_max, m_max
 
 // bio_train dataset: file name should be bio_train.dat
 // line 86: should it be i0???
@@ -57,23 +57,43 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr);
 
-double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
-{
-    double U, V, Z, r;
-
-    U = 2.0 * rand() / RAND_MAX - 1.0;
-    V = 2.0 * rand() / RAND_MAX - 1.0;
-    r = U * U + V * V;
-    r = sqrt(-2.0 * log(r) / r);
-
-    if (phase == 0) {
-        Z = U * r;
-    } else { Z = V * r; }
-
-    return Z;
-}
+//double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
+//{
+//    double U, V, Z, r;
+//
+//    U = 2.0 * rand() / RAND_MAX - 1.0;
+//    V = 2.0 * rand() / RAND_MAX - 1.0;
+//    r = U * U + V * V;
+//    r = sqrt(-2.0 * log(r) / r);
+//
+//    if (phase == 0) {
+//        Z = U * r;
+//    } else { Z = V * r; }
+//
+//    return Z;
+//}
 //print dataset
+double z1;
 
+double gaussian_rand(int phase) {
+    const double epsilon = 2.22507e-308;
+    const double two_pi = 2 * M_PI;
+
+    if (phase == 1)
+        return z1;
+
+    double u1, u2;
+    do {
+        u1 = (rand() + 1.) / (RAND_MAX + 2.);
+        u2 = rand() / (RAND_MAX + 1.);
+    } while (u1 <= epsilon);
+
+    double z0;
+    z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
+    z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
+
+    return z0;
+}
 
 /**************************************************************************/
 /***  Array sizes: centroid[dim],  dimMinMax[2*dim],  dimVariance[dim]  ***/
@@ -89,8 +109,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
     int i, j, k, dim_maxvar;
     char membership, m, m_max, L, L_max; // L is num_tables
     double tmp, maxvar, length;
-
-    printDataSet(dim, im, data);
 
 /******** Scan dataset to find centroid, variance, and min & max of each dimension ********
  ********                      and find initial values for W, m, L                 ********/
@@ -145,18 +163,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
     }
 /*** End of Partition dataset into two subsets ***/
 
-    printf("cluster size: %d - %d \n", cluster_size[0], cluster_size[1]);
-
-    printf("cluster center: \n");
-    for (int l = 0; l < 2; ++l) {
-        printf("\n");
-        for (int n = 0; n < dim; ++n) {
-            printf("%f \n", cluster_center[l][n]);
-        }
-    }
-
-    return 0;
-
 /****** Enter initial values for some of the LSH parameters ******/
     param_ptr->m_max = min((int) (0.25 * dim + 0.5), 12);
     param_ptr->L_max = 20;
@@ -178,19 +184,21 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
         param_ptr->hfunction[i] = (double *) calloc(dim, sizeof(double));
 
     char ll, mm, phase = 0;
-    for (ll = 0; ll <= L_max; ll++)
-        for (mm = 0; mm <= m_max; mm++) { // Generate L_max tables, each with m_max hash functions
+    for (ll = 0; ll < L_max; ll++)
+        for (mm = 0; mm < m_max; mm++) { // Generate L_max tables, each with m_max hash functions
             length = 0.0;
             for (j = 0; j < dim; j++) {
                 tmp = gaussian_rand(phase);
                 phase = 1 - phase;
                 param_ptr->hfunction[ll * m_max + mm][j] = tmp;
                 length += tmp * tmp;
+                printf("temp: %f \n", tmp);
             }
             length = 1.0 / sqrt(length);
-            for (j = 0; j < dim; j++) param_ptr->hfunction[ll * m_max + mm][j] *= length;
+            for (j = 0; j < dim; j++) {
+                param_ptr->hfunction[ll * m_max + mm][j] *= length;
+            }
         }
-
 
     return 1;
 }
@@ -463,17 +471,17 @@ int main() {
     init_LSHparameters(dim, i0, im, data, centroid, dimMinMax, dimVariance,
                        datum, cluster_center, cluster_size, param_ptr);
 
-    printf("centroid: ---\n");
-
-    printDataSet(dim, 1, centroid);
-
-    printf("dim min max: ---\n");
-
-    printDataSet(dim, 2, dimMinMax);
-
-    printf("dim variance: --- \n");
-
-    printDataSet(dim, 1, dimVariance);
+//    printf("centroid: ---\n");
+//
+//    printDataSet(dim, 1, centroid);
+//
+//    printf("dim min max: ---\n");
+//
+//    printDataSet(dim, 2, dimMinMax);
+//
+//    printf("dim variance: --- \n");
+//
+//    printDataSet(dim, 1, dimVariance);
 
 #if 0
 
