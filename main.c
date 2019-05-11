@@ -17,8 +17,14 @@
 
 // in generate hash functions, ll, mm <= L_max, m_max
 
+// gaussian rand doesn't work -> return some random nan's
+
 // bio_train dataset: file name should be bio_train.dat
 // line 86: should it be i0???
+
+// line 229: should it be .1 * W_init
+
+//line 23 something: should <= Lmax, m_max
 
 struct LSH_Parameters {
     char m_max, m,
@@ -145,7 +151,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
         }
 
 
-
     for (i = i0; i < im; i++) {/*** Partition dataset at centroid in dim_maxvar into 2 subsets ***/
         memcpy(datum, data + dim * i, dim * sizeof(double));
         membership = ((datum[dim_maxvar] < centroid[dim_maxvar]) ? 0 : 1);
@@ -192,7 +197,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
                 phase = 1 - phase;
                 param_ptr->hfunction[ll * m_max + mm][j] = tmp;
                 length += tmp * tmp;
-                printf("temp: %f \n", tmp);
             }
             length = 1.0 / sqrt(length);
             for (j = 0; j < dim; j++) {
@@ -214,17 +218,20 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     char m, m_max, L, L_max, *datum_hashval;
     double tmp, W_init, W_min, W_max, W;
 
-    m_max = param_ptr->m_max;
-    L_max = param_ptr->L_max;
+
+    m_max = param_ptr->m_max; //7
+    L_max = param_ptr->L_max; //20
     W_init = param_ptr->W_init;
 
-    datum_hashval = (char *) calloc((L_max * m_max), sizeof(char *)); // buffer
+    datum_hashval = (char *) calloc((L_max * m_max), sizeof(char)); // buffer
+
     struct LSH_Performance ***performances; // Array performances[L_max][m_max][num_Ws]
     struct LSH_Buckets *buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
 
     W_min = 0.5 * W_init;
     W_max = 1.5 * W_init;
-    num_Ws = (int) (0.5 + (0.1 + W_max - W_min) / 0.1);
+    num_Ws = (int) (0.5 + (0.1 + W_max - W_min) / (0.1 * W_init)); //47 // *W_init = 10
+
     performances = (struct LSH_Performance ***) malloc(L_max * sizeof(struct LSH_Performance **));
     for (i = 0; i < L_max; i++) {
         performances[i] = (struct LSH_Performance **) malloc(m_max * sizeof(struct LSH_Performance *));
@@ -233,10 +240,10 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     }
 
 /****** Loop thru values of L, M, W to find the best performance parameters ******/
-    for (L = 3; L <= L_max; L += 3)
-        for (m = 2; m <= m_max; m += 1) {
+    for (L = 3; L < L_max; L += 3)
+        for (m = 2; m < m_max; m += 1) {
             W_count = 0;
-            for (W = W_min; W <= W_max; W += 0.1 * W_init) {
+            for (W = W_min; W < W_max; W += 0.1 * W_init) {
                 ////// Generate buckets using parameters m, L, W and produce search performance results
                 param_ptr->m = m;
                 param_ptr->L = L;
@@ -250,6 +257,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                 W_count++;
             }
         }
+
+    getchar();
 
     // HERE: Choose the m, L, W that produce the best performance
 //    param_ptr->m =;
@@ -304,6 +313,9 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 
     max_nclusters = 8 * (int) sqrt(im - i0);
     max_clustersize = 1024;
+
+    printf("%d - %d", max_nclusters, max_clustersize);
+    getchar();
 
     buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
     buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
@@ -483,10 +495,11 @@ int main() {
 //
 //    printDataSet(dim, 1, dimVariance);
 
-#if 0
 
+#if 1
     choose_LSHparameters(dim, i0, im, data, datum, nqueries, queries, param_ptr);
     /*** End of determining LSH parameters ***/
+
 
     /*** Apply LSH with determined parameters to whole dataset ***/
     char L_max, m_max;
