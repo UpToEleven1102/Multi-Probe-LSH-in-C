@@ -22,7 +22,8 @@
 // bio_train dataset: file name should be bio_train.dat
 // line 86: should it be i0???
 
-// line 229: should it be .1 * W_init
+// line 229: should it be .1 * W_init  // line 330, 334???, 362
+
 
 //line 23 something: should <= Lmax, m_max
 
@@ -47,7 +48,7 @@ struct LSH_Performance {
     double ClusteringTime,
             avg_SearchingTime, wrst_SearchingTime,
             avg_PtsChecked, wrst_PtsChecked,
-            avg_RelativeDist, wrst_RelativeDist, // RelativeDist = approx_distance/exact_distance
+            avg_Dist, wrst_Dist, avg_RelativeDist, wrst_RelativeDist, // RelativeDist = approx_distance/exact_distance
             avg_rho,   // The recall rho = 1 if closest pt in multi-probed buckets, 0 otherwise
             tau,       // The selectivity tau = (num_PtsChecked)/ndata
             tau_other; // = (m * l * num_buckets)/(dim*ndata)
@@ -230,20 +231,20 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
     W_min = 0.5 * W_init;
     W_max = 1.5 * W_init;
-    num_Ws = (int) (0.5 + (0.1 + W_max - W_min) / (0.1 * W_init)); //47 // *W_init = 10
+    num_Ws = (int) (0.5 + (0.1 * W_init + W_max - W_min) / (0.1 * W_init)); //47 // *W_init = 10
 
-    performances = (struct LSH_Performance ***) malloc(L_max * sizeof(struct LSH_Performance **));
-    for (i = 0; i < L_max; i++) {
-        performances[i] = (struct LSH_Performance **) malloc(m_max * sizeof(struct LSH_Performance *));
-        for (j = 0; j < m_max; j++)
-            performances[i][j] = (struct LSH_Performance *) malloc(num_Ws * sizeof(struct LSH_Performance));
+    performances = (struct LSH_Performance ***) malloc((L_max + 1) * sizeof(struct LSH_Performance **));
+    for (i = 0; i <= L_max; i++) {
+        performances[i] = (struct LSH_Performance **) malloc((m_max + 1) * sizeof(struct LSH_Performance *));
+        for (j = 0; j <= m_max; j++)
+            performances[i][j] = (struct LSH_Performance *) malloc((num_Ws + 1) * sizeof(struct LSH_Performance));
     }
 
 /****** Loop thru values of L, M, W to find the best performance parameters ******/
-    for (L = 3; L < L_max; L += 3)
-        for (m = 2; m < m_max; m += 1) {
+    for (L = 3; L <= L_max; L += 3)
+        for (m = 2; m <= m_max; m += 1) {
             W_count = 0;
-            for (W = W_min; W < W_max; W += 0.1 * W_init) {
+            for (W = W_min; W <= W_max; W += 0.1 * W_init) {
                 ////// Generate buckets using parameters m, L, W and produce search performance results
                 param_ptr->m = m;
                 param_ptr->L = L;
@@ -251,14 +252,14 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                 applyLSH(dim, i0, im, data, param_ptr,                        // input
                          datum, datum_hashval,                                // buffers
                          buckets_ptr, &performances[L][m][W_count]);         // output
+
+                //FLAG FINDING PERFORMANCE OR NOT
                 searchLSH(dim, i0, im, data, nqueries, queries, param_ptr, buckets_ptr, // input
                           datum, datum_hashval,                                         // buffers
                           &performances[L][m][W_count]);                               // output
                 W_count++;
             }
         }
-
-    getchar();
 
     // HERE: Choose the m, L, W that produce the best performance
 //    param_ptr->m =;
@@ -279,8 +280,16 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     return 1;
 }
 
-int compareHashVals(struct LSH_Parameters *param_ptr, char *datum_hashval, char *cluster_hashval) {
-    //need dim in here too
+int compareHashVals(int dim, struct LSH_Parameters *param_ptr, const char *datum_hashval, const char *cluster_hashval) {
+    for (int i = 0; i < param_ptr->L; ++i) {
+        for (int j = 0; j < param_ptr->m; ++j) {
+            if (datum_hashval[i * param_ptr->m_max + j] != cluster_hashval[i * param_ptr->m_max + j]) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }
 
 
@@ -314,8 +323,6 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     max_nclusters = 8 * (int) sqrt(im - i0);
     max_clustersize = 1024;
 
-    printf("%d - %d", max_nclusters, max_clustersize);
-    getchar();
 
     buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
     buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
@@ -333,7 +340,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     for (k = 0; k < (buckets_ptr->nclusters); k++) buckets_ptr->clustersize[k] = 0;
     for (k = 0; k < max_nclusters; k++) buckets_ptr->clustersize_limit[k] = max_clustersize;
 
-    for (i = 0; i < (im - i0); i++) {/*** Calc hash val of each datum and put to a bucket ***/
+    for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
         memcpy(datum, data + i * dim, dim * sizeof(double));
 
         for (ll = 0; ll < L; ll++)
@@ -342,9 +349,13 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) (tmp / W);
+                printf("%d ", datum_hashval[ll * m_max + mm]);
             }
+
+        getchar();
+
         for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+            isEqual = compareHashVals(dim, param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
             if (isEqual) {
                 buckets_ptr->clustersize[k]++;
                 cluster_size = buckets_ptr->clustersize[k];
@@ -360,7 +371,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                 break;
             }
         }
-        if (k > (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
+        if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
             buckets_ptr->nclusters++;
             nclusters = buckets_ptr->nclusters;
             if (nclusters > max_nclusters) { // max_nclusters too small
@@ -373,6 +384,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                 }
         }
     }
+
     buckets_ptr->max_nclusters = max_nclusters;
     buckets_ptr->max_clustersize = max_clustersize;
 
