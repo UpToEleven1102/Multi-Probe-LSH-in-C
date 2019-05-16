@@ -11,21 +11,7 @@
 #define max(x, y)    ((x) > (y) ? (x) : (y))
 
 
-// bio_train dataset yield 0 values
-
-// use small dataset to initialize parameters? tlc_nyc ex
-
-// in generate hash functions, ll, mm <= L_max, m_max
-
-// gaussian rand doesn't work -> return some random nan's
-
-// bio_train dataset: file name should be bio_train.dat
-// line 86: should it be i0???
-
-// line 229: should it be .1 * W_init  // line 330, 334???, 362
-
-
-//line 23 something: should <= Lmax, m_max
+// apply LSH buckets - hash vals = 0; print result at the end
 
 struct LSH_Parameters {
     char m_max, m,
@@ -280,7 +266,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     return 1;
 }
 
-int compareHashVals(int dim, struct LSH_Parameters *param_ptr, const char *datum_hashval, const char *cluster_hashval) {
+int compareHashVals(struct LSH_Parameters *param_ptr, const char *datum_hashval, const char *cluster_hashval) {
     for (int i = 0; i < param_ptr->L; ++i) {
         for (int j = 0; j < param_ptr->m; ++j) {
             if (datum_hashval[i * param_ptr->m_max + j] != cluster_hashval[i * param_ptr->m_max + j]) {
@@ -343,19 +329,21 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
         memcpy(datum, data + i * dim, dim * sizeof(double));
 
+//        printf("datum hashval: \n");
+
         for (ll = 0; ll < L; ll++)
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) (tmp / W);
-                printf("%d ", datum_hashval[ll * m_max + mm]);
+//                printf("%d \n",datum_hashval[ll * m_max + mm]);
             }
 
-        getchar();
+//        getchar();
 
         for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = compareHashVals(dim, param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
             if (isEqual) {
                 buckets_ptr->clustersize[k]++;
                 cluster_size = buckets_ptr->clustersize[k];
@@ -367,23 +355,42 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                     if (max_clustersize < buckets_ptr->clustersize_limit[k])
                         max_clustersize = buckets_ptr->clustersize_limit[k];
                 }
-                buckets_ptr->data_indices[k][cluster_size] = i;
+                buckets_ptr->data_indices[k][cluster_size-1] = i;
+
                 break;
             }
         }
         if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
             buckets_ptr->nclusters++;
+
             nclusters = buckets_ptr->nclusters;
             if (nclusters > max_nclusters) { // max_nclusters too small
                 printf("ERROR in applyLSH (): max_nclusters too small.\n\n");
                 return 0;
             }
+
+            cluster_size = buckets_ptr->clustersize[k];
+            buckets_ptr->clustersize[k]++;
+
+            buckets_ptr->data_indices[k][cluster_size] = i;
+
             for (ll = 0; ll < L; ll++)
                 for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
                     buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
                 }
         }
     }
+
+
+//    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
+//        for (int n = 0; n < buckets_ptr->clustersize[l]; ++n) {
+//            printf("%d \n", buckets_ptr->data_indices[l][n]);
+//        }
+//
+//        printf("\n");
+//    }
+//
+//    getchar();
 
     buckets_ptr->max_nclusters = max_nclusters;
     buckets_ptr->max_clustersize = max_clustersize;
@@ -435,7 +442,7 @@ int main() {
 
     dim = 29;
 //    ndata = 11000000;
-    ndata = 1000;
+    ndata = 10000;
     nqueries = ndata / 10;
     data = (double *) calloc(dim * ndata, sizeof(double));
     queries = data; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
