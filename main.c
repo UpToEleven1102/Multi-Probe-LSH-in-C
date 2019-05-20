@@ -45,12 +45,12 @@ struct LSH_Performance {
 
 int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param_ptr,  // input
              double *datum, char *datum_hashval,                                        // buffers
-             struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr);
+             struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr, bool choose_param_mode);
 
 int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queries, // input
               struct LSH_Parameters *param_ptr, struct LSH_Buckets *buckets_ptr,     // input
               double *datum, char *datum_hashval,                                     // buffers
-              struct LSH_Performance *performance_ptr);
+              struct LSH_Performance *performance_ptr, bool choose_param_mode);
 
 //double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
 //{
@@ -250,7 +250,7 @@ distanceToBucket(int dim, struct LSH_Parameters *param_ptr, const double *datum,
             tmp = 0;
             n_step = bucket_hashval[ll * m_max + mm] - datum_hashval[ll * m_max + mm];
 
-            printf("%d, %d \n", bucket_hashval[ll * m_max + mm] ,datum_hashval[ll * m_max + mm]);
+//            printf("%d, %d \n", bucket_hashval[ll * m_max + mm] ,datum_hashval[ll * m_max + mm]);
 
             if (n_step != 0) {
                 distance += (abs(n_step) - 1) * w;
@@ -313,7 +313,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                 param_ptr->W = W;
                 applyLSH(dim, i0, im, data, param_ptr,                        // input
                          datum, datum_hashval,                                // buffers
-                         buckets_ptr, &performances[L][m][W_count]);         // output
+                         buckets_ptr, &performances[L][m][W_count], 1);         // output
 
 
 
@@ -324,7 +324,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                 //FLAG FINDING PERFORMANCE OR NOT
                 searchLSH(dim, i0, im, data, nqueries, queries, param_ptr, buckets_ptr, // input
                           datum, datum_hashval,                                         // buffers
-                          &performances[L][m][W_count]);                               // output
+                          &performances[L][m][W_count], 1);                               // output
                 W_count++;
             }
         }
@@ -352,7 +352,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 /**************************************************************************************/
 int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param_ptr,  // input
              double *datum, char *datum_hashval,                                        // buffers
-             struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr) // output
+             struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr, // output
+                     bool choose_param_mode)
 /*** datum_hashVal[L_max][m_max], uses only [L][m] ***/
 {
     int i, j, k, max_nclusters, max_clustersize;
@@ -476,7 +477,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queries, // input
               struct LSH_Parameters *param_ptr, struct LSH_Buckets *buckets_ptr,     // input
               double *datum, char *datum_hashval,                                     // buffers
-              struct LSH_Performance *performance_ptr)                              // output
+              struct LSH_Performance *performance_ptr, bool choose_param_mode)                              // output
 {
     printf("cluster sizes - n cluster %d \n", buckets_ptr->nclusters);
 
@@ -488,7 +489,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
     }
 
     printf("n data : %d", counter);
-    counter = 0;
     getchar();
 
     int i, j, k, ll, mm, m, m_max, L, L_max, result_idx;
@@ -509,6 +509,8 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
         bool notFound = true;
         min_distance = RAND_MAX;
         result_idx = -1;
+        counter = 0;
+
         //calculate hashvals
         memcpy(datum, data + i * dim, dim * sizeof(double));
 
@@ -522,13 +524,13 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             }
 
 
-        printf("%d n bucket\n", buckets_ptr->nclusters);
+//        printf("%d n bucket\n", buckets_ptr->nclusters);
         for (k = 0; k < (buckets_ptr->nclusters); k++) {
             bucket_indices[k] = k;
             bucket_distances[k] = distanceToBucket(dim, param_ptr, datum, datum_hashval,
                                                    buckets_ptr->cluster_hashval[k]);
 
-            printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
+//            printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
             if (notFound) {
                 isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
 
@@ -551,8 +553,11 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             printf("No match for datum hash val \n");
         }
 
-        printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
-               exactClosestDistance(dim, i0, im, i, data));
+        if (!choose_param_mode) {
+            printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
+                   exactClosestDistance(dim, i0, im, i, data));
+        }
+
 
         int tmp_idx;
         double tmp_dis;
@@ -584,10 +589,10 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
 //            printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
         }
-
-        printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
-
-        getchar();
+        if (!choose_param_mode) {
+            printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
+        }
+//        getchar();
     }
 
 
@@ -712,9 +717,9 @@ int main() {
     datum_hashval = (char *) calloc((L_max * m_max), sizeof(char *));
 
     applyLSH(dim, i0, im, data, param_ptr, datum, datum_hashval,
-             buckets_ptr, performance_ptr);
+             buckets_ptr, performance_ptr, 0);
     searchLSH(dim, i0, im, data, nqueries, queries, param_ptr, buckets_ptr,
-              datum, datum_hashval, performance_ptr);
+              datum, datum_hashval, performance_ptr, 0);
 
 #endif
 
