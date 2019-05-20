@@ -227,7 +227,7 @@ double exactClosestDistance(int dim, int i0, int im, int idx, double *data) {
             minDistance = distance;
             min_idx = i;
         }
-        printf("i: %d - distance: %f \n", i, distance);
+//        printf("i: %d - distance: %f \n", i, distance);
     }
 
 //    printf("closest idx: %d \n", min_idx);
@@ -480,7 +480,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 {
     printf("cluster sizes - n cluster %d \n", buckets_ptr->nclusters);
 
-    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
+    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 1 / 100.0) + 1;
 
     for (int l = 0; l < buckets_ptr->nclusters; ++l) {
         printf("%d \n", buckets_ptr->clustersize[l]);
@@ -570,8 +570,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             }
         }
 
-
-        for (int n = 0; n < n_probing_buckets; ++n) {
+        for (int n = 1; n < n_probing_buckets; ++n) {
             k = bucket_indices[n];
             double distance;
             for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
@@ -623,8 +622,8 @@ int main() {
     FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
     dim = 29;
-//    ndata = 11000000;
-    ndata = 10000;
+    ndata = 11000000;
+//    ndata = 10000;
     nqueries = ndata / 10;
     data = (double *) calloc(dim * ndata, sizeof(double));
     queries = data; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
