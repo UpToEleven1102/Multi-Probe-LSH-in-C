@@ -256,7 +256,7 @@ distanceToBucket(int dim, struct LSH_Parameters *param_ptr, const double *datum,
                 distance += (abs(n_step) - 1) * w;
 
                 for (int j = 0; j < dim; ++j) {
-                    tmp += (datum[j] + param_ptr->b[j]) * param_ptr->hfunction[ll * m_max + mm][j];
+                    tmp += (datum[j] ) * param_ptr->hfunction[ll * m_max + mm][j]+ param_ptr->b[j];
 
                 }
 
@@ -405,7 +405,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
-                    tmp += (datum[j] + param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
+                    tmp += (datum[j]) * (param_ptr->hfunction[ll * m_max + mm][j]) + param_ptr->b[j];
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
 //                printf("%d \n",datum_hashval[ll * m_max + mm]);
             }
@@ -478,18 +478,18 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr)                              // output
 {
-//    printf("cluster sizes \n");
-//
-//    int n_data = 0;
-//
-//    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
-//        printf("%d \n", buckets_ptr->clustersize[l]);
-//        n_data += buckets_ptr->clustersize[l];
-//    }
-//
-//    printf("n data : %d", n_data);
-//
-//    getchar();
+    printf("cluster sizes - n cluster %d \n", buckets_ptr->nclusters);
+
+    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
+
+    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
+        printf("%d \n", buckets_ptr->clustersize[l]);
+        counter += buckets_ptr->clustersize[l];
+    }
+
+    printf("n data : %d", counter);
+    counter = 0;
+    getchar();
 
     int i, j, k, ll, mm, m, m_max, L, L_max, result_idx;
     char isEqual;
@@ -506,6 +506,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
     double *bucket_distances = (double *) calloc(buckets_ptr->nclusters, sizeof(double));
 
     for (i = 0; i < i0; ++i) {
+        bool notFound = true;
         min_distance = RAND_MAX;
         result_idx = -1;
         //calculate hashvals
@@ -516,35 +517,33 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
-                    tmp += (datum[j] + param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
+                    tmp += (datum[j]) * (param_ptr->hfunction[ll * m_max + mm][j]) + param_ptr->b[j];
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
             }
 
+
+        printf("%d n bucket\n", buckets_ptr->nclusters);
         for (k = 0; k < (buckets_ptr->nclusters); k++) {
             bucket_indices[k] = k;
             bucket_distances[k] = distanceToBucket(dim, param_ptr, datum, datum_hashval,
                                                    buckets_ptr->cluster_hashval[k]);
 
             printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
+            if (notFound) {
+                isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
 
-            if (k == 5) {
-                for (int l = 0; l < buckets_ptr->clustersize[k]; ++l) {
-                    printf("bucket %d: %d \n", k, buckets_ptr->data_indices[k][l]);
-                }
-            }
-
-            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
-
-            if (isEqual) {
-                double distance;
-                for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
-                    distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
-                    if (distance < min_distance) {
-                        min_distance = distance;
-                        result_idx = buckets_ptr->data_indices[k][j];
+                if (isEqual) {
+                    double distance;
+                    notFound = false;
+                    for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
+                        counter ++;
+                        distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
+                        if (distance < min_distance) {
+                            min_distance = distance;
+                            result_idx = buckets_ptr->data_indices[k][j];
+                        }
                     }
                 }
-                break;
             }
         }
 
@@ -552,8 +551,42 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             printf("No match for datum hash val \n");
         }
 
-        printf("result idx: %d, distance: %f, exact closest: %f \n", result_idx, min_distance,
+        printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
                exactClosestDistance(dim, i0, im, i, data));
+
+        int tmp_idx;
+        double tmp_dis;
+        for (k = 0; k < buckets_ptr->nclusters; ++k) {
+            for (int l = k+1; l < buckets_ptr->nclusters; ++l) {
+                if (bucket_distances[k] > bucket_distances[l]) {
+                    tmp_dis = bucket_distances[k];
+                    bucket_distances[k] = bucket_distances[l];
+                    bucket_distances[l] = tmp_dis;
+
+                    tmp_idx = bucket_indices[k];
+                    bucket_indices[k] = bucket_indices[l];
+                    bucket_indices[l] = tmp_idx;
+                }
+            }
+        }
+
+
+        for (int n = 0; n < n_probing_buckets; ++n) {
+            k = bucket_indices[n];
+            double distance;
+            for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
+                counter ++;
+                distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    result_idx = buckets_ptr->data_indices[k][j];
+                }
+            }
+
+//            printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
+        }
+
+        printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
 
         getchar();
     }
