@@ -479,33 +479,34 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr, bool choose_param_mode)                              // output
 {
-    printf("cluster sizes - n cluster %d \n", buckets_ptr->nclusters);
-
     int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 1 / 100.0) + 1;
 
-    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
-        printf("%d \n", buckets_ptr->clustersize[l]);
-        counter += buckets_ptr->clustersize[l];
-    }
 
-    printf("n data : %d", counter);
-    getchar();
+    printf("n cluster %d : cluster sizes: \n", buckets_ptr->nclusters);
 
-    int i, j, k, ll, mm, m, m_max, L, L_max, result_idx;
+//    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
+//        printf("%d \n", buckets_ptr->clustersize[l]);
+//        counter += buckets_ptr->clustersize[l];
+//    }
+
+//    printf("n data : %d", counter);
+//    getchar();
+
+    int i, j, k, ll, mm, m, m_max, L, result_idx;
     char isEqual;
-    double tmp, W, time_start, time_end, min_distance;
+    double tmp, exact_distance, W, time_start, time_end, min_distance, search_time;
 
-    time_start = clock();
     m = param_ptr->m;
     m_max = param_ptr->m_max;
     L = param_ptr->L;
-    L_max = param_ptr->L_max;
     W = param_ptr->W;
 
     int *bucket_indices = (int *) calloc(buckets_ptr->nclusters, sizeof(int));
     double *bucket_distances = (double *) calloc(buckets_ptr->nclusters, sizeof(double));
 
     for (i = 0; i < i0; ++i) {
+        time_start = clock();
+
         bool notFound = true;
         min_distance = RAND_MAX;
         result_idx = -1;
@@ -551,13 +552,13 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
         if (result_idx < 0) {
             printf("No match for datum hash val \n");
-        }
+        } else {
+            exact_distance = exactClosestDistance(dim, i0, im, i, data);
 
-        if (!choose_param_mode) {
-            printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
-                   exactClosestDistance(dim, i0, im, i, data));
+            if (choose_param_mode) {
+                printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance, exact_distance);
+            }
         }
-
 
         int tmp_idx;
         double tmp_dis;
@@ -589,12 +590,29 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
 //            printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
         }
-        if (!choose_param_mode) {
+        if (choose_param_mode) {
             printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
         }
+
+        time_end = clock();
+
+        if(choose_param_mode) {
+            search_time = 0.000001 * (time_end - time_start);
+
+            performance_ptr->avg_SearchingTime += search_time;
+            if (performance_ptr->wrst_SearchingTime < search_time) performance_ptr->wrst_SearchingTime = search_time;
+
+            performance_ptr->avg_PtsChecked += counter;
+            if (performance_ptr->wrst_PtsChecked < counter) performance_ptr->wrst_PtsChecked = counter;
+        }
+
 //        getchar();
     }
 
+    if (choose_param_mode) {
+        performance_ptr->avg_SearchingTime /= i0;
+        performance_ptr->avg_PtsChecked /= i0;
+    }
 
     return 1;
 }
