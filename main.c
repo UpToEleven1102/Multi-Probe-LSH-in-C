@@ -319,9 +319,34 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                           datum, datum_hashval,                                         // buffers
                           &performances[L][m][W_count]);                               // output
 
+                W_count++;
+            }
+        }
+
+    double wrst_relative_dist_threshold = 1.3;
+    double avg_rho_threshold = .8;
+
+    int _L = -1, _m = -1;
+    double _W = -1, min_clustering_time = RAND_MAX, min_search_time = RAND_MAX;
+
+    for (L = 3; L <= L_max; L += 3)
+        for (m = 2; m <= m_max; m += 1) {
+            W_count = 0;
+            for (W = W_min; W <= W_max; W += 0.1 * W_init) {
+                if (performances[L][m][W_count].wrst_RelativeDist < wrst_relative_dist_threshold
+                    && performances[L][m][W_count].avg_rho > avg_rho_threshold
+                    && performances[L][m][W_count].ClusteringTime < min_clustering_time
+                    && performances[L][m][W_count].avg_SearchingTime < min_search_time) {
+                    min_clustering_time = performances[L][m][W_count].ClusteringTime;
+                    min_search_time = performances[L][m][W_count].avg_SearchingTime;
+                    _L = L;
+                    _m = m;
+                    _W = W;
+                }
+
                 printf(" L : %d, m: %d, W: %f, performances: ", L, m, W);
 
-                printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %f, %f, %f \n",
+                printf("wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, num_buckets %d, ClusteringTime %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
                        performances[L][m][W_count].wrst_PtsChecked,
                        performances[L][m][W_count].avg_PtsChecked,
                        performances[L][m][W_count].wrst_Dist,
@@ -335,21 +360,17 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                        performances[L][m][W_count].ClusteringTime,
                        performances[L][m][W_count].avg_SearchingTime,
                        performances[L][m][W_count].wrst_SearchingTime);
-
                 W_count++;
-
             }
         }
 
-    //quality vs search time
+    printf("final L %d m %d w %f \n", _L, _m, _W);
 
-    // 2 quality: percentage after distance
-    // fewest, fastest search time
-
+    getchar();
     // HERE: Choose the m, L, W that produce the best performance
-//    param_ptr->m =;
-//    param_ptr->L =;
-//    param_ptr->W =;
+    param_ptr->m = _m;
+    param_ptr->L = _L;
+    param_ptr->W = _W;
 
 /****** Deallocate memories ******/
     for (i = 0; i < L_max; i++) {
@@ -393,7 +414,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 } ;
 #endif
 
-    max_nclusters = 8 * (int) sqrt(im - i0);
+    max_nclusters = 32 * (int) sqrt(im - i0);
     max_clustersize = 1024;
 
 
@@ -473,7 +494,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 
     time_end = clock();
 
-    if(performance_ptr) performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+    if (performance_ptr) performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
 
     return 1;
 } /****** End of function applyLSH() ******/
@@ -485,7 +506,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr)                              // output
 {
-    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 3 / 100.0) + 1;
+    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
 
     n_probing_buckets = max(n_probing_buckets, 2);
 
@@ -559,8 +580,8 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
         exact_distance = exactClosestDistance(dim, i0, im, i, data);
 
-            printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
-                   exact_distance);
+//        printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
+//               exact_distance);
 
         int tmp_idx;
         double tmp_dis;
@@ -592,7 +613,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
 //            printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
         }
-            printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
+//        printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
 
         if (performance_ptr) {
             time_end = clock();
@@ -606,14 +627,16 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             if (performance_ptr->wrst_PtsChecked < counter) performance_ptr->wrst_PtsChecked = counter;
 
             performance_ptr->avg_Dist += min_distance - exact_distance;
-            if (performance_ptr->wrst_Dist < min_distance - exact_distance) performance_ptr->wrst_Dist = min_distance - exact_distance;
+            if (performance_ptr->wrst_Dist < min_distance - exact_distance)
+                performance_ptr->wrst_Dist = min_distance - exact_distance;
 
-            performance_ptr->avg_RelativeDist += min_distance/exact_distance;
-            if (performance_ptr->wrst_RelativeDist < min_distance/exact_distance) performance_ptr->wrst_RelativeDist = min_distance/exact_distance;
+            performance_ptr->avg_RelativeDist += min_distance / exact_distance;
+            if (performance_ptr->wrst_RelativeDist < min_distance / exact_distance)
+                performance_ptr->wrst_RelativeDist = min_distance / exact_distance;
 
             performance_ptr->avg_rho += min_distance == exact_distance ? 1 : 0;
 
-            performance_ptr->tau += counter/(double)(im - i0);
+            performance_ptr->tau += counter / (double) (im - i0);
         }
     }
 
@@ -627,43 +650,35 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
 //        performance_ptr->tau /= i0;
 
-        performance_ptr->tau_other = (m * L * buckets_ptr->nclusters)/(double)(dim * (im-i0));
-
+        performance_ptr->tau_other = (m * L * buckets_ptr->nclusters) / (double) (dim * (im - i0));
     }
 
     return 1;
 }
 
 
-#define DATASET        1
+#define DATASET        4
 
 int main() {
-    int dim, ndata, i0, im, nqueries,
-            i, j, k, kk, cluster_size[2];
+    int dim, ndata, i0, im, nqueries, cluster_size[2];
 
-    double *data, *centroid, *dimMinMax, *dimVariance, *queries,
-            tmp, duration, *datum;
+    double *data, *centroid, *dimMinMax, *dimVariance, *queries, *datum;
 
     double *cluster_center[2];
     char *datum_hashval;
 
-    clock_t start, finish;
-
     struct LSH_Parameters *param_ptr;
     struct LSH_Buckets *buckets_ptr;
-    struct LSH_Performance *performance_ptr;
 
     param_ptr = (struct LSH_Parameters *) malloc(sizeof(struct LSH_Parameters));
     buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
-    performance_ptr = (struct LSH_Performance *) malloc(sizeof(struct LSH_Performance));
-
 
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
     FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
     dim = 29;
-//    ndata = 11000000;
-    ndata = 10000;
+    ndata = 11000000;
+//    ndata = 100000;
     nqueries = ndata / 10;
     data = (double *) calloc(dim * ndata, sizeof(double));
     queries = data; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
@@ -694,7 +709,7 @@ int main() {
 
     dim = 16;
 //    ndata = 41000000;
-    ndata = 1000;
+    ndata = 100000;
     data = (double *) calloc(dim * ndata, sizeof(double));
     if (fp != NULL) {
         fread(data, sizeof(double), dim * ndata, fp);
@@ -704,6 +719,20 @@ int main() {
     }
 #endif
 
+#if (DATASET == 4)
+    FILE *fp = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
+
+    dim = 24;
+//    ndata = 16000000;
+    ndata = 10000;
+    data = (double *) calloc(dim * ndata, sizeof(double));
+    if (fp != NULL) {
+        fread(data, sizeof(double), dim * ndata, fp);
+        fclose(fp);
+    } else {
+        printf("failed to open file");
+    }
+#endif
     // add more data sets here
 
     centroid = (double *) calloc(dim, sizeof(double));
