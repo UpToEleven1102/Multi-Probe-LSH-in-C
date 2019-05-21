@@ -317,15 +317,34 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
 
 
-//                printf("performance - l: %d, m: %d, w_count: %d, %f \n", L, m, W_count, performances[L][m][W_count].ClusteringTime);
-//
-//                getchar();
+                printf("performance - l: %d, m: %d, w_count: %d, %f \n", L, m, W_count, performances[L][m][W_count].ClusteringTime);
 
-                //FLAG FINDING PERFORMANCE OR NOT
+                getchar();
+
                 searchLSH(dim, i0, im, data, nqueries, queries, param_ptr, buckets_ptr, // input
                           datum, datum_hashval,                                         // buffers
                           &performances[L][m][W_count], 1);                               // output
                 W_count++;
+
+
+                printf(" L : %d, m: %d, W: %f, performances: ", L, m, W);
+
+                printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %f, %f, %f \n",
+                       performances[L][m][W_count].wrst_PtsChecked,
+                       performances[L][m][W_count].avg_PtsChecked,
+                       performances[L][m][W_count].wrst_Dist,
+                       performances[L][m][W_count].avg_Dist,
+                       performances[L][m][W_count].wrst_RelativeDist,
+                       performances[L][m][W_count].avg_RelativeDist,
+                       performances[L][m][W_count].avg_rho,
+                       performances[L][m][W_count].tau,
+                       performances[L][m][W_count].tau_other,
+                       performances[L][m][W_count].num_buckets,
+                       performances[L][m][W_count].ClusteringTime,
+                       performances[L][m][W_count].avg_SearchingTime,
+                       performances[L][m][W_count].wrst_SearchingTime);
+                getchar();
+
             }
         }
 
@@ -382,7 +401,7 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 } ;
 #endif
 
-    max_nclusters = 32 * (int) sqrt(im - i0);
+    max_nclusters = 8 * (int) sqrt(im - i0);
     max_clustersize = 1024;
 
 
@@ -475,6 +494,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 {
     int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 3 / 100.0) + 1;
 
+    n_probing_buckets = max(n_probing_buckets, 2);
 
 //    printf("n cluster %d : cluster sizes: \n", buckets_ptr->nclusters);
 //
@@ -619,7 +639,24 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 //        performance_ptr->tau /= i0;
 
         performance_ptr->tau_other = (m * L * buckets_ptr->nclusters)/(double)(dim * (im-i0));
+
     }
+
+    printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %f, %f, %f \n",
+           performance_ptr->wrst_PtsChecked,
+           performance_ptr->avg_PtsChecked,
+           performance_ptr->wrst_Dist,
+           performance_ptr->avg_Dist,
+           performance_ptr->wrst_RelativeDist,
+           performance_ptr->avg_RelativeDist,
+           performance_ptr->avg_rho,
+           performance_ptr->tau,
+           performance_ptr->tau_other,
+           performance_ptr->num_buckets,
+           performance_ptr->ClusteringTime,
+           performance_ptr->avg_SearchingTime,
+           performance_ptr->wrst_SearchingTime);
+    getchar();
 
     return 1;
 }
