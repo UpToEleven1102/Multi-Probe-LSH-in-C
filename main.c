@@ -11,6 +11,8 @@
 #define max(x, y)    ((x) > (y) ? (x) : (y))
 
 
+//line 432  can't be moved outside
+
 // apply LSH buckets - hash vals = 0; print result at the end
 
 // ai + bi * q/ w?? -bi ?? ai*q + bi
@@ -97,12 +99,16 @@ double gaussian_rand(int phase) {
 int init_LSHparameters(int dim, int i0, int im, double *data,             // input: dataset
                        double *centroid, double *dimMinMax, double *dimVariance,         // intermediate data
                        double *datum, double *cluster_center[2], int cluster_size[2],   // buffers
-                       struct LSH_Parameters *param_ptr)                                // output
+                       struct LSH_Parameters *param_ptr,
+                       struct LSH_Buckets *buckets_ptr)                                // output
 {
     srand(1);
     int i, j, k, dim_maxvar;
     char membership, m, m_max, L, L_max; // L is num_tables
     double tmp, maxvar, length;
+
+    cluster_size[0] = 0;
+    cluster_size[1] = 0;
 
 /******** Scan dataset to find centroid, variance, and min & max of each dimension ********
  ********                      and find initial values for W, m, L                 ********/
@@ -192,6 +198,14 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
             }
         }
 
+
+    int max_nclusters = 128 * (int) sqrt(im - i0);
+    int max_clustersize = 1024;
+
+    buckets_ptr->max_nclusters = max_nclusters;
+    buckets_ptr->max_clustersize = max_clustersize;
+
+
     return 1;
 }
 
@@ -275,7 +289,8 @@ distanceToBucket(int dim, struct LSH_Parameters *param_ptr, const double *datum,
 int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: small dataset
                          double *datum,                           // buffer
                          int nqueries, double *queries,           // input
-                         struct LSH_Parameters *param_ptr)        // input & output
+                         struct LSH_Parameters *param_ptr,
+                         struct LSH_Buckets *buckets_ptr)        // input & output
 {
     int i, j, W_count, num_Ws; //datum_hashVal[L_max*m_max], uses only [L*m]
     char m, m_max, L, L_max, *datum_hashval;
@@ -289,7 +304,6 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     datum_hashval = (char *) calloc((L_max * m_max), sizeof(char)); // buffer
 
     struct LSH_Performance ***performances; // Array performances[L_max][m_max][num_Ws]
-    struct LSH_Buckets *buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
 
     W_min = 0.8 * W_init;
     W_max = 1.5 * W_init;
@@ -414,9 +428,8 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 } ;
 #endif
 
-    max_nclusters = 32 * (int) sqrt(im - i0);
-    max_clustersize = 1024;
-
+    max_nclusters = buckets_ptr->max_nclusters;
+    max_clustersize = buckets_ptr->max_clustersize;
 
     buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
     buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
@@ -657,12 +670,12 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        4
+#define DATASET        1
 
 int main() {
-    int dim, ndata, i0, im, nqueries, cluster_size[2];
+    int dim, ndata, i0, im, nqueries, cluster_size[2], n_batches, data_size;
 
-    double *data, *centroid, *dimMinMax, *dimVariance, *queries, *datum;
+    double **data, *centroid, *dimMinMax, *dimVariance, *queries, *datum;
 
     double *cluster_center[2];
     char *datum_hashval;
@@ -676,16 +689,31 @@ int main() {
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
     FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
+
     dim = 29;
-    ndata = 11000000;
-//    ndata = 100000;
+
+//    data_size = 9000000;
+//    ndata = 1000000;
+
+    data_size = 90000;
+
+    ndata = 10000;
+    n_batches = data_size / ndata;
+
     nqueries = ndata / 10;
-    data = (double *) calloc(dim * ndata, sizeof(double));
-    queries = data; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
+
+    data = (double **) malloc(n_batches * sizeof(double *));
+    for (int i = 0; i < n_batches; ++i) {
+        data[i] = (double *) calloc(dim * ndata, sizeof(double));
+    }
+
+    queries = data[0]; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * ndata, fp);
+        for (int i = 0; i < n_batches; ++i) {
+            fseek(fp, sizeof(double) * dim * ndata * i, SEEK_SET);
+            fread(data[i], sizeof(double), dim * ndata, fp);
+        }
         fclose(fp);
-//        printDataSet(dim, ndata, data);
     } else {
         printf("failed to open file");
     }
@@ -739,34 +767,25 @@ int main() {
     dimMinMax = (double *) calloc((2 * dim), sizeof(double));
     dimVariance = (double *) calloc(dim, sizeof(double));
     datum = (double *) calloc(dim, sizeof(double));
-//    datum_hashval = (char *) ///////////////////////////////////
     cluster_center[0] = (double *) calloc(dim, sizeof(double));
     cluster_center[1] = (double *) calloc(dim, sizeof(double));
 
 
     /*** Determine LSH parameters from a small dataset ***/
-    int n_smalldata = ndata / 100, n_smallqueries = n_smalldata / 10;
-    i0 = n_smallqueries;
-    im = n_smalldata;
+//    int n_smalldata = ndata / 100, n_smallqueries = n_smalldata / 10;
+//    i0 = n_smallqueries;
+//    im = n_smalldata;
 
-    init_LSHparameters(dim, i0, im, data, centroid, dimMinMax, dimVariance,
-                       datum, cluster_center, cluster_size, param_ptr);
+    im = ndata;
+    i0 = ndata/10;
 
-//    printf("centroid: ---\n");
-//
-//    printDataSet(dim, 1, centroid);
-//
-//    printf("dim min max: ---\n");
-//
-//    printDataSet(dim, 2, dimMinMax);
-//
-//    printf("dim variance: --- \n");
-//
-//    printDataSet(dim, 1, dimVariance);
+
+    init_LSHparameters(dim, i0, im, data[0], centroid, dimMinMax, dimVariance,
+                       datum, cluster_center, cluster_size, param_ptr, buckets_ptr);
 
 
 #if 1
-    choose_LSHparameters(dim, i0, im, data, datum, nqueries, queries, param_ptr);
+    choose_LSHparameters(dim, i0, im, data[0], datum, nqueries, queries, param_ptr, buckets_ptr);
     /*** End of determining LSH parameters ***/
 
 
@@ -780,9 +799,9 @@ int main() {
     m_max = param_ptr->m_max;
     datum_hashval = (char *) calloc((L_max * m_max), sizeof(char *));
 
-    applyLSH(dim, i0, im, data, param_ptr, datum, datum_hashval,
+    applyLSH(dim, i0, im, data[0], param_ptr, datum, datum_hashval,
              buckets_ptr, NULL);
-    searchLSH(dim, i0, im, data, nqueries, queries, param_ptr, buckets_ptr,
+    searchLSH(dim, i0, im, data[0], nqueries, queries, param_ptr, buckets_ptr,
               datum, datum_hashval, NULL);
 
 #endif
