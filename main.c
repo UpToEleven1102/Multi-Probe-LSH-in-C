@@ -99,8 +99,7 @@ double gaussian_rand(int phase) {
 int init_LSHparameters(int dim, int i0, int im, double *data,             // input: dataset
                        double *centroid, double *dimMinMax, double *dimVariance,         // intermediate data
                        double *datum, double *cluster_center[2], int cluster_size[2],   // buffers
-                       struct LSH_Parameters *param_ptr,
-                       struct LSH_Buckets *buckets_ptr)                                // output
+                       struct LSH_Parameters *param_ptr)                                // output
 {
     srand(1);
     int i, j, k, dim_maxvar;
@@ -199,13 +198,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
         }
 
 
-    int max_nclusters = 128 * (int) sqrt(im - i0);
-    int max_clustersize = 1024;
-
-    buckets_ptr->max_nclusters = max_nclusters;
-    buckets_ptr->max_clustersize = max_clustersize;
-
-
     return 1;
 }
 
@@ -296,9 +288,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     char m, m_max, L, L_max, *datum_hashval;
     double tmp, W_init, W_min, W_max, W;
 
-
-    m_max = param_ptr->m_max; //7
-    L_max = param_ptr->L_max; //20
+    m_max = param_ptr->m_max;
+    L_max = param_ptr->L_max;
     W_init = param_ptr->W_init;
 
     datum_hashval = (char *) calloc((L_max * m_max), sizeof(char)); // buffer
@@ -321,6 +312,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
         for (m = 2; m <= m_max; m += 1) {
             W_count = 0;
             for (W = W_min; W <= W_max; W += 0.1 * W_init) {
+
                 ////// Generate buckets using parameters m, L, W and produce search performance results
                 param_ptr->m = m;
                 param_ptr->L = L;
@@ -431,18 +423,27 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     max_nclusters = buckets_ptr->max_nclusters;
     max_clustersize = buckets_ptr->max_clustersize;
 
+    max_nclusters = 128 * (int) sqrt(im - i0);
+    max_clustersize = 1024;
+    L_max = param_ptr->L_max;
+    m_max = param_ptr->m_max;
+
+    buckets_ptr->max_nclusters = max_nclusters;
+    buckets_ptr->max_clustersize = max_clustersize;
+
     buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
     buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
 
     buckets_ptr->cluster_hashval = (char **) calloc(max_nclusters, sizeof(char *));
     buckets_ptr->data_indices = (int **) calloc(max_nclusters, sizeof(int *));
-    for (i = 0; i < max_nclusters; i++) {
+    for (int i = 0; i < max_nclusters; i++) {
         buckets_ptr->cluster_hashval[i] = (char *) calloc((L_max * m_max), sizeof(char));
         buckets_ptr->data_indices[i] = (int *) calloc(max_clustersize, sizeof(int));
     }
 
+
 /**************** Calculate hash val for each datum and put to a bucket **************/
-    int isEqual, new_limit, cluster_size, nclusters;
+    int isEqual, new_limit, cluster_size;
     buckets_ptr->nclusters = 0;
     for (k = 0; k < (buckets_ptr->nclusters); k++) buckets_ptr->clustersize[k] = 0;
     for (k = 0; k < max_nclusters; k++) buckets_ptr->clustersize_limit[k] = max_clustersize;
@@ -471,6 +472,8 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                 if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
                     buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
                     new_limit = buckets_ptr->clustersize_limit[k];
+
+                    //problem here?? how to realloc and actually change the pointer of the data??
                     buckets_ptr->data_indices[k] =
                             (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
                     if (max_clustersize < buckets_ptr->clustersize_limit[k])
@@ -689,7 +692,6 @@ int main() {
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
     FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
 
-
     dim = 29;
 
 //    data_size = 9000000;
@@ -770,7 +772,6 @@ int main() {
     cluster_center[0] = (double *) calloc(dim, sizeof(double));
     cluster_center[1] = (double *) calloc(dim, sizeof(double));
 
-
     /*** Determine LSH parameters from a small dataset ***/
 //    int n_smalldata = ndata / 100, n_smallqueries = n_smalldata / 10;
 //    i0 = n_smallqueries;
@@ -781,16 +782,33 @@ int main() {
 
 
     init_LSHparameters(dim, i0, im, data[0], centroid, dimMinMax, dimVariance,
-                       datum, cluster_center, cluster_size, param_ptr, buckets_ptr);
+                       datum, cluster_center, cluster_size, param_ptr);
 
+    int max_nclusters, max_clustersize;
+    char L_max, m_max;
 
-#if 1
+    max_nclusters = 128 * (int) sqrt(im - i0);
+    max_clustersize = 1024;
+    L_max = param_ptr->L_max;
+    m_max = param_ptr->m_max;
+
+    buckets_ptr->max_nclusters = max_nclusters;
+    buckets_ptr->max_clustersize = max_clustersize;
+
+    buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
+    buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
+
+    buckets_ptr->cluster_hashval = (char **) calloc(max_nclusters, sizeof(char *));
+    buckets_ptr->data_indices = (int **) calloc(max_nclusters, sizeof(int *));
+    for (int i = 0; i < max_nclusters; i++) {
+        buckets_ptr->cluster_hashval[i] = (char *) calloc((L_max * m_max), sizeof(char));
+        buckets_ptr->data_indices[i] = (int *) calloc(max_clustersize, sizeof(int));
+    }
+
     choose_LSHparameters(dim, i0, im, data[0], datum, nqueries, queries, param_ptr, buckets_ptr);
     /*** End of determining LSH parameters ***/
 
-
     /*** Apply LSH with determined parameters to whole dataset ***/
-    char L_max, m_max;
 
     nqueries = ndata / 10;
     i0 = nqueries;
@@ -804,11 +822,9 @@ int main() {
     searchLSH(dim, i0, im, data[0], nqueries, queries, param_ptr, buckets_ptr,
               datum, datum_hashval, NULL);
 
-#endif
-
 
 /****** Deallocate memory space ******/
-//    free(datum_hashval);
+    free(datum_hashval);
     free(datum);
     free(data);
 
