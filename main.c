@@ -511,15 +511,17 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
     n_probing_buckets = max(n_probing_buckets, 2);
 
-//    printf("n cluster %d : cluster sizes: \n", buckets_ptr->nclusters);
+//    if (batch_number != 0) {
+//        printf("n cluster %d : cluster sizes: \n", buckets_ptr->nclusters);
 //
-//    for (int l = 0; l < buckets_ptr->nclusters; ++l) {
-//        printf("%d \n", buckets_ptr->clustersize[l]);
-//        counter += buckets_ptr->clustersize[l];
+//        for (int l = 0; l < buckets_ptr->nclusters; ++l) {
+//            printf("%d \n", buckets_ptr->clustersize[l]);
+//            counter += buckets_ptr->clustersize[l];
+//        }
+//
+//        printf("n data : %d", counter);
+//        getchar();
 //    }
-//
-//    printf("n data : %d", counter);
-//    getchar();
 
     int i, j, k, ll, mm, m, m_max, L, result_idx;
     char isEqual;
@@ -535,7 +537,8 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
     int ndata = batch_number == 0 ? i0 : im;
 
-    printf("searching batch %d - num queries: %d \n", batch_number, ndata);
+    if (batch_number != 0)
+        printf("searching batch %d - num queries: %d - num buckets: %d ...\n", batch_number, ndata, buckets_ptr->nclusters);
 
     for (i = 0; i < ndata; ++i) {
         time_start = clock();
@@ -548,13 +551,26 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
         //calculate hashvals
         memcpy(datum, data + i * dim + batch_number * im * dim, dim * sizeof(double));
 
+        if (batch_number != 0) {
+            printDataSet(dim, (batch_number + 1) * im, data);
 
+            getchar();
+
+            printf("datum idx %d \n", i + batch_number * im);
+
+            printDataSet(dim, 1, datum);
+            getchar();
+        }
+
+
+        if (batch_number != 0) printf("datum hash vals: \n");
         for (ll = 0; ll < L; ll++)
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
+                if (batch_number != 0) printf("%d \n", datum_hashval[ll * m_max + mm]);
             }
 
 
@@ -567,10 +583,15 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 //            printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
             if (notFound) {
                 isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
-
                 if (isEqual) {
                     double distance;
                     notFound = false;
+
+                    if (batch_number != 0){
+                        printf("Found bucket %d \n", k);
+                        getchar();
+                    }
+
                     for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                         counter++;
                         distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
@@ -585,12 +606,10 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
         exact_distance = batch_number == 0 ? exactClosestDistance(dim, i0, im, i, data) : exactClosestDistance(dim, 0,
                                                                                                                batch_number *
-                                                                                                               im, i,
+                                                                                                               im,
+                                                                                                               batch_number *
+                                                                                                               im + i,
                                                                                                                data);
-
-        if (batch_number != 0)
-            printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
-                   exact_distance);
 
         int tmp_idx;
         double tmp_dis;
@@ -620,9 +639,15 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 }
             }
 
-//            printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
+            if (batch_number != 0) {
+                printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
+                getchar();
+            }
         }
-//        printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
+        if (batch_number != 0) {
+            printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
+            getchar();
+        }
 
         if (performance_ptr) {
             time_end = clock();
@@ -687,7 +712,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 performance_ptr->avg_SearchingTime,
                 performance_ptr->wrst_SearchingTime)
                             : fprintf(of,
-                                      "Batch number: %d, L: %d, m: %d, W: %f, wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, num_buckets %d, avg_SearchingTime %f, wrst_SearchingTime %f \n",
+                                      "Batch number: %d, L: %d, m: %d, W: %f, wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
                                       batch_number, L, m, W,
                                       performance_ptr->wrst_PtsChecked,
                                       performance_ptr->avg_PtsChecked,
@@ -698,7 +723,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                       performance_ptr->avg_rho,
                                       performance_ptr->tau,
                                       performance_ptr->tau_other,
-                                      performance_ptr->num_buckets,
                                       performance_ptr->avg_SearchingTime,
                                       performance_ptr->wrst_SearchingTime);
 
@@ -823,7 +847,7 @@ int main() {
     im = batch_size;
     i0 = batch_size / 10;
 
-    printf("Initializing paramaters\n");
+    printf("Initializing paramaters...\n");
 
     init_LSHparameters(dim, i0, im, data, centroid, dimMinMax, dimVariance,
                        datum, cluster_center, cluster_size, param_ptr);
@@ -849,7 +873,7 @@ int main() {
         buckets_ptr->data_indices[i] = (int *) calloc(max_clustersize, sizeof(int));
     }
 
-    printf("Start Choosing LSH\n");
+    printf("Start Choosing LSH...\n");
 
     choose_LSHparameters(dim, i0, im, data, datum, nqueries, queries, param_ptr, buckets_ptr);
     /*** End of determining LSH parameters ***/
@@ -862,15 +886,16 @@ int main() {
 
     struct LSH_Performance *performance = (struct LSH_Performance *) malloc(sizeof(struct LSH_Performance));
 
-    printf("Apply LSH to to first data set with chosen params: L %d m %d W %f \n", param_ptr->L, param_ptr->m,
+    printf("Apply LSH to to first data set with chosen params: L %d m %d W %f ...\n", param_ptr->L, param_ptr->m,
            param_ptr->W);
 
     // apply LSH with chosen params
-    applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, 0);
 
-    printf("Start leting batches to come in \n");
+
+    printf("Start leting batches to come in(Num buckets: %d)... \n", buckets_ptr->nclusters);
 
     for (int i = 1; i < n_batches; ++i) {
+        applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
         searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i);
     }
 
