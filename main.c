@@ -312,6 +312,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
         for (m = 2; m <= m_max; m += 1) {
             W_count = 0;
             for (W = W_min; W <= W_max; W += 0.1 * W_init) {
+                printf("m: %d L: %d W: %f \n", m, L, W);
 
                 ////// Generate buckets using parameters m, L, W and produce search performance results
                 param_ptr->m = m;
@@ -341,8 +342,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
             for (W = W_min; W <= W_max; W += 0.1 * W_init) {
                 if (performances[L][m][W_count].wrst_RelativeDist < wrst_relative_dist_threshold
                     && performances[L][m][W_count].avg_rho > avg_rho_threshold
-                    && performances[L][m][W_count].ClusteringTime < min_clustering_time
-                    && performances[L][m][W_count].avg_SearchingTime < min_search_time) {
+                    && (performances[L][m][W_count].ClusteringTime + performances[L][m][W_count].avg_SearchingTime) <
+                       (min_clustering_time + min_search_time)) {
                     min_clustering_time = performances[L][m][W_count].ClusteringTime;
                     min_search_time = performances[L][m][W_count].avg_SearchingTime;
                     _L = L;
@@ -423,22 +424,18 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     max_nclusters = buckets_ptr->max_nclusters;
     max_clustersize = buckets_ptr->max_clustersize;
 
-    max_nclusters = 128 * (int) sqrt(im - i0);
-    max_clustersize = 1024;
-    L_max = param_ptr->L_max;
-    m_max = param_ptr->m_max;
+    for (i = 0; i < max_nclusters; ++i) {
+        buckets_ptr->clustersize_limit[i] = max_clustersize;
+        buckets_ptr->clustersize[i] = 0;
+    }
 
-    buckets_ptr->max_nclusters = max_nclusters;
-    buckets_ptr->max_clustersize = max_clustersize;
-
-    buckets_ptr->clustersize_limit = (int *) calloc(max_nclusters, sizeof(int));
-    buckets_ptr->clustersize = (int *) calloc(max_nclusters, sizeof(int));
-
-    buckets_ptr->cluster_hashval = (char **) calloc(max_nclusters, sizeof(char *));
-    buckets_ptr->data_indices = (int **) calloc(max_nclusters, sizeof(int *));
-    for (int i = 0; i < max_nclusters; i++) {
-        buckets_ptr->cluster_hashval[i] = (char *) calloc((L_max * m_max), sizeof(char));
-        buckets_ptr->data_indices[i] = (int *) calloc(max_clustersize, sizeof(int));
+    for (i = 0; i < max_nclusters; i++) {
+        for (j = 0; j < L_max * m_max; ++j) {
+            buckets_ptr->cluster_hashval[i][j] = 0;
+        }
+        for (j = 0; j < max_clustersize; ++j) {
+            buckets_ptr->data_indices[i][j] = 0;
+        }
     }
 
 
@@ -504,9 +501,6 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                 }
         }
     }
-
-    buckets_ptr->max_nclusters = max_nclusters;
-    buckets_ptr->max_clustersize = max_clustersize;
 
     time_end = clock();
 
@@ -676,7 +670,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 #define DATASET        1
 
 int main() {
-    int dim, ndata, i0, im, nqueries, cluster_size[2], n_batches, data_size;
+    int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, n_test_batches, ndata, ntest_data;
 
     double **data, *centroid, *dimMinMax, *dimVariance, *queries, *datum;
 
@@ -690,30 +684,46 @@ int main() {
     buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
 
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
-    FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
-
     dim = 29;
 
-//    data_size = 9000000;
-//    ndata = 1000000;
+    ndata = 9000000;
+    batch_size = 1000;
+    ntest_data = 2000000;
 
-    data_size = 90000;
+//    ndata = 9000;
+//    batch_size = 10000;
+//    ntest_data = 2000;
 
-    ndata = 10000;
-    n_batches = data_size / ndata;
+    n_batches = (ndata + ntest_data) / batch_size;
 
-    nqueries = ndata / 10;
+    n_test_batches = ntest_data / batch_size;
+
+    nqueries = batch_size / 10;
 
     data = (double **) malloc(n_batches * sizeof(double *));
     for (int i = 0; i < n_batches; ++i) {
-        data[i] = (double *) calloc(dim * ndata, sizeof(double));
+        data[i] = (double *) calloc(dim * batch_size, sizeof(double));
     }
 
-    queries = data[0]; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=ndata
+    FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
+
+    queries = data[0]; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=batch_size
     if (fp != NULL) {
-        for (int i = 0; i < n_batches; ++i) {
-            fseek(fp, sizeof(double) * dim * ndata * i, SEEK_SET);
-            fread(data[i], sizeof(double), dim * ndata, fp);
+        for (int i = 0; i < n_batches - n_test_batches; ++i) {
+            fseek(fp, sizeof(double) * dim * batch_size * i, SEEK_SET);
+            fread(data[i], sizeof(double), dim * batch_size, fp);
+        }
+        fclose(fp);
+    } else {
+        printf("failed to open file");
+    }
+
+    fp = fopen("../data_sets/ts_HIGGS.dat", "rb");
+
+    if (fp != NULL) {
+        for (int i = 0; i < n_test_batches; ++i) {
+            fseek(fp, sizeof(double) * dim * batch_size * i, SEEK_SET);
+            fread(data[i + n_test_batches], sizeof(double), dim * batch_size, fp);
         }
         fclose(fp);
     } else {
@@ -723,11 +733,11 @@ int main() {
 
 #if (DATASET == 2)/*** bio_train dataset from http://osmot.cs.cornell.edu/kddcup/  ***/
     FILE *fp = fopen("../data_sets/bio_train.dat","rb");
-     dim = 77 ;   ndata = 1000 ;
-//     dim = 74 ;   ndata = 145751 ;
-     data = (double *) calloc(dim * ndata, sizeof(double)) ;
+     dim = 77 ;   batch_size = 1000 ;
+//     dim = 74 ;   batch_size = 145751 ;
+     data = (double *) calloc(dim * batch_size, sizeof(double)) ;
      if(fp!= NULL) {
-         fread(data, sizeof(double), dim * ndata, fp);
+         fread(data, sizeof(double), dim * batch_size, fp);
          fclose(fp);
      } else {
          printf("failed to open file");
@@ -738,11 +748,11 @@ int main() {
     FILE *fp = fopen("../data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
 
     dim = 16;
-//    ndata = 41000000;
-    ndata = 100000;
-    data = (double *) calloc(dim * ndata, sizeof(double));
+//    batch_size = 41000000;
+    batch_size = 100000;
+    data = (double *) calloc(dim * batch_size, sizeof(double));
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * ndata, fp);
+        fread(data, sizeof(double), dim * batch_size, fp);
         fclose(fp);
     } else {
         printf("failed to open file");
@@ -753,11 +763,11 @@ int main() {
     FILE *fp = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
 
     dim = 24;
-//    ndata = 16000000;
-    ndata = 10000;
-    data = (double *) calloc(dim * ndata, sizeof(double));
+//    batch_size = 16000000;
+    batch_size = 10000;
+    data = (double *) calloc(dim * batch_size, sizeof(double));
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * ndata, fp);
+        fread(data, sizeof(double), dim * batch_size, fp);
         fclose(fp);
     } else {
         printf("failed to open file");
@@ -773,12 +783,12 @@ int main() {
     cluster_center[1] = (double *) calloc(dim, sizeof(double));
 
     /*** Determine LSH parameters from a small dataset ***/
-//    int n_smalldata = ndata / 100, n_smallqueries = n_smalldata / 10;
+//    int n_smalldata = batch_size / 100, n_smallqueries = n_smalldata / 10;
 //    i0 = n_smallqueries;
 //    im = n_smalldata;
 
-    im = ndata;
-    i0 = ndata/10;
+    im = batch_size;
+    i0 = batch_size / 10;
 
 
     init_LSHparameters(dim, i0, im, data[0], centroid, dimMinMax, dimVariance,
@@ -810,9 +820,9 @@ int main() {
 
     /*** Apply LSH with determined parameters to whole dataset ***/
 
-    nqueries = ndata / 10;
+    nqueries = batch_size / 10;
     i0 = nqueries;
-    im = ndata;
+    im = batch_size;
     L_max = param_ptr->L_max;
     m_max = param_ptr->m_max;
     datum_hashval = (char *) calloc((L_max * m_max), sizeof(char *));
@@ -822,15 +832,14 @@ int main() {
     searchLSH(dim, i0, im, data[0], nqueries, queries, param_ptr, buckets_ptr,
               datum, datum_hashval, NULL);
 
-
 /****** Deallocate memory space ******/
     free(datum_hashval);
     free(datum);
     free(data);
 
     // first deallocate hfucntion[] inside param_ptr, then deallocate param_ptr
-    // first deallocate memories inside buckets_ptr, then deallocate buckets_ptr
 
+    // first deallocate memories inside buckets_ptr, then deallocate buckets_ptr
 
 } /************ End of main() ************/
 
