@@ -345,6 +345,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                     _m = m;
                     _W = W;
                 }
+
                 W_count++;
             }
         }
@@ -404,7 +405,6 @@ if (batch_number == 0) {
             buckets_ptr->data_indices[i][j] = 0;
         }
     }
-
 
 /**************** Calculate hash val for each datum and put to a bucket **************/
     int isEqual, new_limit, cluster_size;
@@ -478,8 +478,7 @@ if (batch_number == 0) {
     char membership, m, m_max, L, L_max, ll, mm;
     double tmp, W, time_start, time_end;
 
-//    time_start = clock();
-
+    time_start = clock();
     m = param_ptr->m;
     m_max = param_ptr->m_max;
     L = param_ptr->L;
@@ -498,13 +497,18 @@ if (batch_number == 0) {
     for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
         memcpy(datum, data + i * dim, dim * sizeof(double));
 
+//        printf("datum hashval: \n");
+
         for (ll = 0; ll < L; ll++)
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
+//                printf("%d \n",datum_hashval[ll * m_max + mm]);
             }
+
+//        getchar();
 
         for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
             isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
@@ -531,8 +535,8 @@ if (batch_number == 0) {
                 printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
                        max_nclusters);
                 break;
+//                return 0;
             }
-
             buckets_ptr->nclusters++;
 
             cluster_size = buckets_ptr->clustersize[k];
@@ -547,9 +551,9 @@ if (batch_number == 0) {
         }
     }
 
-//    time_end = clock();
+    time_end = clock();
 
-//    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
 }
 
     return 1;
@@ -950,9 +954,9 @@ int main() {
            param_ptr->W);
 
     // apply LSH with chosen params
-    printf("Start leting batches to come in(Num buckets: %d)... \n", buckets_ptr->nclusters);
+    printf("Start leting batches to come in... \n");
 
-    for (int i = 1; i < n_batches; ++i) {
+    for (int i = 0; i < n_batches; ++i) {
         applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
         searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i);
     }
