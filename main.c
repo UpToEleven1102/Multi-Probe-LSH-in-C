@@ -391,6 +391,8 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
              struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr, int batch_number) // output
 /*** datum_hashVal[L_max][m_max], uses only [L][m] ***/
 {
+#if batch_number == 0
+
     int i, j, k, max_nclusters, max_clustersize;
     char membership, m, m_max, L, L_max, ll, mm;
     double tmp, W, time_start, time_end;
@@ -401,16 +403,6 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     L = param_ptr->L;
     L_max = param_ptr->L_max;
     W = param_ptr->W;
-
-#if 0   /*** Already defined. Only for reference ***/
-    struct LSH_Buckets {
-   int   nclusters, max_nclusters, max_clustersize,
-         *clustersize, *clustersize_limit; // clustersize_limit[max_nclusters]
-                                           // cluster_size[max_nclusters]
-   int **cluster_hashval,  // cluster_hashval[max_nclusters][L_max*m_max]
-       **data_indices;     // data_indices[max_nclusters][max_clustersize]
-} ;
-#endif
 
     max_nclusters = buckets_ptr->max_nclusters;
     max_clustersize = buckets_ptr->max_clustersize;
@@ -495,7 +487,10 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
 
     time_end = clock();
 
-    if (batch_number == 0) performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+#else
+
+#endif
 
     return 1;
 } /****** End of function applyLSH() ******/
@@ -551,26 +546,26 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
         //calculate hashvals
         memcpy(datum, data + i * dim + batch_number * im * dim, dim * sizeof(double));
 
-        if (batch_number != 0) {
-            printDataSet(dim, (batch_number + 1) * im, data);
+//        if (batch_number != 0) {
+//            printDataSet(dim, (batch_number + 1) * im, data);
+//
+//            getchar();
+//
+//            printf("datum idx %d \n", i + batch_number * im);
+//
+//            printDataSet(dim, 1, datum);
+//            getchar();
+//        }
 
-            getchar();
 
-            printf("datum idx %d \n", i + batch_number * im);
-
-            printDataSet(dim, 1, datum);
-            getchar();
-        }
-
-
-        if (batch_number != 0) printf("datum hash vals: \n");
+//        if (batch_number != 0) printf("datum hash vals: \n");
         for (ll = 0; ll < L; ll++)
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
-                if (batch_number != 0) printf("%d \n", datum_hashval[ll * m_max + mm]);
+//                if (batch_number != 0) printf("%d \n", datum_hashval[ll * m_max + mm]);
             }
 
 
@@ -587,14 +582,14 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                     double distance;
                     notFound = false;
 
-                    if (batch_number != 0){
-                        printf("Found bucket %d \n", k);
-                        getchar();
-                    }
+//                    if (batch_number != 0){
+//                        printf("Found bucket %d \n", k);
+//                        getchar();
+//                    }
 
                     for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                         counter++;
-                        distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
+                        distance = calculateDistance(dim, i + batch_number * im, buckets_ptr->data_indices[k][j], data);
                         if (distance < min_distance) {
                             min_distance = distance;
                             result_idx = buckets_ptr->data_indices[k][j];
@@ -610,6 +605,11 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                                                                                                batch_number *
                                                                                                                im + i,
                                                                                                                data);
+
+        if (batch_number != 0) {
+            printf("Found distance : %f, Exact distance: %f \n", min_distance, exact_distance);
+            getchar();
+        }
 
         int tmp_idx;
         double tmp_dis;
@@ -632,17 +632,17 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             double distance;
             for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                 counter++;
-                distance = calculateDistance(dim, i, buckets_ptr->data_indices[k][j], data);
+                distance = calculateDistance(dim, i + batch_number * im, buckets_ptr->data_indices[k][j], data);
                 if (distance < min_distance) {
                     min_distance = distance;
                     result_idx = buckets_ptr->data_indices[k][j];
                 }
             }
 
-            if (batch_number != 0) {
-                printf("idx : %d, distance: %f \n", bucket_indices[n], bucket_distances[n]);
-                getchar();
-            }
+//            if (batch_number != 0) {
+//                printf("bucket idx : %d, bucket distance: %f \n", bucket_indices[n], bucket_distances[n]);
+//                getchar();
+//            }
         }
         if (batch_number != 0) {
             printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
@@ -898,7 +898,6 @@ int main() {
         applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
         searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i);
     }
-
 
 /****** Deallocate memory space ******/
     free(datum_hashval);
