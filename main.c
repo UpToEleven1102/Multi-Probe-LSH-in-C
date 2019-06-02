@@ -331,41 +331,6 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     int _L = -1, _m = -1;
     double _W = -1, min_clustering_time = RAND_MAX, min_search_time = RAND_MAX;
 
-    for (L = 3; L <= L_max; L += 3)
-        for (m = 2; m <= m_max; m += 1) {
-            W_count = 0;
-            for (W = W_min; W <= W_max; W += 0.1 * W_init) {
-                if (performances[L][m][W_count].wrst_RelativeDist < wrst_relative_dist_threshold
-                    && performances[L][m][W_count].avg_rho > avg_rho_threshold
-                    && (performances[L][m][W_count].ClusteringTime + performances[L][m][W_count].avg_SearchingTime) <
-                       (min_clustering_time + min_search_time)) {
-                    min_clustering_time = performances[L][m][W_count].ClusteringTime;
-                    min_search_time = performances[L][m][W_count].avg_SearchingTime;
-                    _L = L;
-                    _m = m;
-                    _W = W;
-                }
-
-                printf(" L : %d, m: %d, W: %f, performances: ", L, m, W);
-
-                printf("wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, num_buckets %d, ClusteringTime %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
-                       performances[L][m][W_count].wrst_PtsChecked,
-                       performances[L][m][W_count].avg_PtsChecked,
-                       performances[L][m][W_count].wrst_Dist,
-                       performances[L][m][W_count].avg_Dist,
-                       performances[L][m][W_count].wrst_RelativeDist,
-                       performances[L][m][W_count].avg_RelativeDist,
-                       performances[L][m][W_count].avg_rho,
-                       performances[L][m][W_count].tau,
-                       performances[L][m][W_count].tau_other,
-                       performances[L][m][W_count].num_buckets,
-                       performances[L][m][W_count].ClusteringTime,
-                       performances[L][m][W_count].avg_SearchingTime,
-                       performances[L][m][W_count].wrst_SearchingTime);
-                W_count++;
-            }
-        }
-
     printf("final L %d m %d w %f \n", _L, _m, _W);
 
     // HERE: Choose the m, L, W that produce the best performance
@@ -391,7 +356,8 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
              struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr, int batch_number) // output
 /*** datum_hashVal[L_max][m_max], uses only [L][m] ***/
 {
-#if batch_number == 0
+if (batch_number == 0) {
+/**************** Apply LSH for first batch **************/
 
     int i, j, k, max_nclusters, max_clustersize;
     char membership, m, m_max, L, L_max, ll, mm;
@@ -453,7 +419,6 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
                     buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
                     new_limit = buckets_ptr->clustersize_limit[k];
 
-                    //problem here?? how to realloc and actually change the pointer of the data??
                     buckets_ptr->data_indices[k] =
                             (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
                     if (max_clustersize < buckets_ptr->clustersize_limit[k])
@@ -488,9 +453,86 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
     time_end = clock();
 
     performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
-#else
+} else {
+/**************** Apply LSH for incoming batches **************/
 
-#endif
+    int i, j, k, max_nclusters, max_clustersize;
+    char membership, m, m_max, L, L_max, ll, mm;
+    double tmp, W, time_start, time_end;
+
+//    time_start = clock();
+
+    m = param_ptr->m;
+    m_max = param_ptr->m_max;
+    L = param_ptr->L;
+    L_max = param_ptr->L_max;
+    W = param_ptr->W;
+
+    max_nclusters = buckets_ptr->max_nclusters;
+    max_clustersize = buckets_ptr->max_clustersize;
+
+/**************** Calculate hash val for each datum and put to a bucket **************/
+    int isEqual, new_limit, cluster_size;
+
+    i0 = batch_number * im;
+    im = im + i0;
+
+    for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
+        memcpy(datum, data + i * dim, dim * sizeof(double));
+
+        for (ll = 0; ll < L; ll++)
+            for (mm = 0; mm < m; mm++) {
+                tmp = 0.0;
+                for (j = 0; j < dim; j++)
+                    tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
+                datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
+            }
+
+        for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
+            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+            if (isEqual) {
+                buckets_ptr->clustersize[k]++;
+                cluster_size = buckets_ptr->clustersize[k];
+                if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
+                    buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
+                    new_limit = buckets_ptr->clustersize_limit[k];
+
+                    //problem here?? how to realloc and actually change the pointer of the data??
+                    buckets_ptr->data_indices[k] =
+                            (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
+                    if (max_clustersize < buckets_ptr->clustersize_limit[k])
+                        max_clustersize = buckets_ptr->clustersize_limit[k];
+                }
+                buckets_ptr->data_indices[k][cluster_size - 1] = i;
+
+                break;
+            }
+        }
+        if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
+            if (buckets_ptr->nclusters == max_nclusters) { // max_nclusters too small
+                printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
+                       max_nclusters);
+                break;
+            }
+
+            buckets_ptr->nclusters++;
+
+            cluster_size = buckets_ptr->clustersize[k];
+            buckets_ptr->clustersize[k]++;
+
+            buckets_ptr->data_indices[k][cluster_size] = i;
+
+            for (ll = 0; ll < L; ll++)
+                for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
+                    buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
+                }
+        }
+    }
+
+//    time_end = clock();
+
+//    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+}
 
     return 1;
 } /****** End of function applyLSH() ******/
@@ -606,10 +648,10 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                                                                                                im + i,
                                                                                                                data);
 
-        if (batch_number != 0) {
-            printf("Found distance : %f, Exact distance: %f \n", min_distance, exact_distance);
-            getchar();
-        }
+//        if (batch_number != 0) {
+//            printf("Found distance : %f, Exact distance: %f \n", min_distance, exact_distance);
+//            getchar();
+//        }
 
         int tmp_idx;
         double tmp_dis;
@@ -644,10 +686,10 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 //                getchar();
 //            }
         }
-        if (batch_number != 0) {
-            printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
-            getchar();
-        }
+//        if (batch_number != 0) {
+//            printf("after probing: checked: %d, idx: %d, distance: %f \n", counter, result_idx, min_distance);
+//            getchar();
+//        }
 
         if (performance_ptr) {
             time_end = clock();
@@ -886,12 +928,10 @@ int main() {
 
     struct LSH_Performance *performance = (struct LSH_Performance *) malloc(sizeof(struct LSH_Performance));
 
-    printf("Apply LSH to to first data set with chosen params: L %d m %d W %f ...\n", param_ptr->L, param_ptr->m,
+    printf("Apply LSH to the first data set with chosen params: L %d m %d W %f ...\n", param_ptr->L, param_ptr->m,
            param_ptr->W);
 
     // apply LSH with chosen params
-
-
     printf("Start leting batches to come in(Num buckets: %d)... \n", buckets_ptr->nclusters);
 
     for (int i = 1; i < n_batches; ++i) {
