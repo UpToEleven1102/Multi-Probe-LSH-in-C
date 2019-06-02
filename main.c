@@ -381,9 +381,6 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     free(performances);
     free(datum_hashval);
 
-    // first deallocate memories inside buckets
-    free(buckets_ptr);
-
     return 1;
 }
 
@@ -591,8 +588,9 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                                                                                                im, i,
                                                                                                                data);
 
-//        printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
-//               exact_distance);
+        if (batch_number != 0)
+            printf("checked: %d, result idx: %d, distance: %f, exact closest: %f \n", counter, result_idx, min_distance,
+                   exact_distance);
 
         int tmp_idx;
         double tmp_dis;
@@ -727,6 +725,8 @@ int main() {
     param_ptr = (struct LSH_Parameters *) malloc(sizeof(struct LSH_Parameters));
     buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
 
+    printf("Reading data...\n");
+
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
     dim = 29;
 
@@ -823,6 +823,7 @@ int main() {
     im = batch_size;
     i0 = batch_size / 10;
 
+    printf("Initializing paramaters\n");
 
     init_LSHparameters(dim, i0, im, data, centroid, dimMinMax, dimVariance,
                        datum, cluster_center, cluster_size, param_ptr);
@@ -848,6 +849,8 @@ int main() {
         buckets_ptr->data_indices[i] = (int *) calloc(max_clustersize, sizeof(int));
     }
 
+    printf("Start Choosing LSH\n");
+
     choose_LSHparameters(dim, i0, im, data, datum, nqueries, queries, param_ptr, buckets_ptr);
     /*** End of determining LSH parameters ***/
 
@@ -859,9 +862,16 @@ int main() {
 
     struct LSH_Performance *performance = (struct LSH_Performance *) malloc(sizeof(struct LSH_Performance));
 
+    printf("Apply LSH to to first data set with chosen params: L %d m %d W %f \n", param_ptr->L, param_ptr->m,
+           param_ptr->W);
+
+    // apply LSH with chosen params
+    applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, 0);
+
+    printf("Start leting batches to come in \n");
+
     for (int i = 1; i < n_batches; ++i) {
         searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i);
-        applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
     }
 
 
@@ -870,6 +880,12 @@ int main() {
     free(datum);
     free(data);
 
+    // first deallocate memories inside buckets
+    free(buckets_ptr->clustersize_limit);
+    free(buckets_ptr->clustersize);
+    free(buckets_ptr->data_indices);
+    free(buckets_ptr->cluster_hashval);
+    free(buckets_ptr);
     // first deallocate hfucntion[] inside param_ptr, then deallocate param_ptr
 
     // first deallocate memories inside buckets_ptr, then deallocate buckets_ptr
