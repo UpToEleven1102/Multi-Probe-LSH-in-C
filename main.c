@@ -331,6 +331,24 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     int _L = -1, _m = -1;
     double _W = -1, min_clustering_time = RAND_MAX, min_search_time = RAND_MAX;
 
+    for (L = 3; L <= L_max; L += 3)
+        for (m = 2; m <= m_max; m += 1) {
+            W_count = 0;
+            for (W = W_min; W <= W_max; W += 0.1 * W_init) {
+                if (performances[L][m][W_count].wrst_RelativeDist < wrst_relative_dist_threshold
+                    && performances[L][m][W_count].avg_rho > avg_rho_threshold
+                    && (performances[L][m][W_count].ClusteringTime + performances[L][m][W_count].avg_SearchingTime) <
+                       (min_clustering_time + min_search_time)) {
+                    min_clustering_time = performances[L][m][W_count].ClusteringTime;
+                    min_search_time = performances[L][m][W_count].avg_SearchingTime;
+                    _L = L;
+                    _m = m;
+                    _W = W;
+                }
+                W_count++;
+            }
+        }
+
     printf("final L %d m %d w %f \n", _L, _m, _W);
 
     // HERE: Choose the m, L, W that produce the best performance
