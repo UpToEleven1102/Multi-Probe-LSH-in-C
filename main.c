@@ -776,7 +776,20 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 performance_ptr->avg_SearchingTime,
                 performance_ptr->wrst_SearchingTime)
                             : fprintf(of,
-                                      "Batch number: %d, L: %d, m: %d, W: %f, wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
+                                      "Batch number: %d, L: %d, m: %d, W: %f, "
+                                      "wrst_PtsChecked %f, "
+                                      "avg_PtsChecked %f, "
+                                      "wrst_Dist %f, "
+                                      "avg_Dist %f, "
+                                      "wrst_RelativeDist %f, "
+                                      "avg_RelativeDist %f, "
+                                      "avg_rho %f, "
+                                      "tau %f, "
+                                      "tau_other %f, "
+                                      "num_buckets %d,"
+                                      "ClusteringTime %f,"
+                                      "avg_SearchingTime %f, "
+                                      "wrst_SearchingTime %f \n",
                                       batch_number, L, m, W,
                                       performance_ptr->wrst_PtsChecked,
                                       performance_ptr->avg_PtsChecked,
@@ -787,6 +800,8 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                       performance_ptr->avg_rho,
                                       performance_ptr->tau,
                                       performance_ptr->tau_other,
+                                      performance_ptr->num_buckets,
+                                      performance_ptr->ClusteringTime,
                                       performance_ptr->avg_SearchingTime,
                                       performance_ptr->wrst_SearchingTime);
 
@@ -957,8 +972,23 @@ int main() {
     printf("Start leting batches to come in... \n");
 
     for (int i = 0; i < n_batches; ++i) {
+        //reset performance:
+        performance->ClusteringTime = 0;
+        performance->avg_SearchingTime = 0;
+        performance->wrst_SearchingTime = 0;
+        performance->avg_PtsChecked = 0;
+        performance->wrst_PtsChecked = 0;
+        performance->avg_Dist =0;
+        performance->wrst_Dist = 0;
+        performance->avg_RelativeDist = 0;
+        performance->wrst_RelativeDist = 0;
+        performance->avg_rho = 0;
+        performance->tau = 0;
+        performance->tau_other = 0;
+        performance->num_buckets = 0;
+
         applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
-        searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i);
+        searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance, i + 1);
     }
 
 /****** Deallocate memory space ******/
