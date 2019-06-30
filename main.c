@@ -226,7 +226,7 @@ double exactClosestDistance(int dim, int i0, int im, int idx, double *data) {
         double distance = calculateDistance(dim, idx, i, data);
         if (distance < minDistance) {
             minDistance = distance;
-            min_idx = i;
+//            min_idx = i;
         }
 //        printf("i: %d - distance: %f \n", i, distance);
     }
@@ -429,7 +429,20 @@ if (batch_number == 0) {
 //        getchar();
 
         for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+            isEqual = true;
+            for (int l = 0; l < L; ++l) {
+                for (int n = 0; n < m; ++n) {
+                    if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
+                        isEqual = false;
+                        break;
+                    }
+                }
+
+                if (!isEqual) {
+                    break;
+                }
+            }
+
             if (isEqual) {
                 buckets_ptr->clustersize[k]++;
                 cluster_size = buckets_ptr->clustersize[k];
@@ -511,7 +524,22 @@ if (batch_number == 0) {
 //        getchar();
 
         for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+            isEqual = true;
+
+            for (int l = 0; l < L; ++l) {
+                for (int n = 0; n < m; ++n) {
+                    if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
+                        isEqual = false;
+                        break;
+                    }
+                }
+
+                if (!isEqual) {
+                    break;
+                }
+            }
+
+
             if (isEqual) {
                 buckets_ptr->clustersize[k]++;
                 cluster_size = buckets_ptr->clustersize[k];
@@ -641,7 +669,21 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
 //            printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
             if (notFound) {
-                isEqual = compareHashVals(param_ptr, datum_hashval, buckets_ptr->cluster_hashval[k]);
+                isEqual = true;
+
+                for (int l = 0; l < L; ++l) {
+                    for (int n = 0; n < m; ++n) {
+                        if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
+                            isEqual = false;
+                            break;
+                        }
+                    }
+
+                    if (!isEqual) {
+                        break;
+                    }
+                }
+
                 if (isEqual) {
                     double distance;
                     notFound = false;
@@ -969,7 +1011,7 @@ int main() {
            param_ptr->W);
 
     // apply LSH with chosen params
-    printf("Start leting batches to come in... \n");
+    printf("Start leting batches to come in... %d number of batches \n", n_batches);
 
     for (int i = 0; i < n_batches; ++i) {
         //reset performance:
