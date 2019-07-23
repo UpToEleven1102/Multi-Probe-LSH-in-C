@@ -830,7 +830,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("hep_mass_choose_params.txt", "a") : fopen("hepmass.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("hetero_choose_params.txt", "a") : fopen("hetero.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -886,7 +886,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        5
+#define DATASET        4
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -954,7 +954,7 @@ int main() {
      }
 #endif
 
-#if (DATASET == 3)
+#if (DATASET == 3)/** tlc nyc **/
     FILE *fp = fopen("./data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
 
     dim = 16;
@@ -972,7 +972,7 @@ int main() {
     }
 #endif
 
-#if (DATASET == 4)
+#if (DATASET == 4) /** hetero **/
     FILE *fp = fopen("./data_sets/heterogeneity_activity_norm.dat", "rb");
 
     dim = 24;
@@ -990,7 +990,7 @@ int main() {
     }
 #endif
 
-#if (DATASET == 5)
+#if (DATASET == 5) /** hepmass **/
     FILE *fp = fopen("./data_sets/heterogeneity_activity_norm.dat", "rb");
 
     dim = 28;
