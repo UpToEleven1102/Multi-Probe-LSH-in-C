@@ -886,7 +886,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        3
+#define DATASET        4
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -973,7 +973,7 @@ int main() {
 #endif
 
 #if (DATASET == 4)
-    FILE *fp = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
+    FILE *fp = fopen("./data_sets/heterogeneity_activity_norm.dat", "rb");
 
     dim = 24;
     ndata = 16000000;
