@@ -124,7 +124,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
         }
     }
 
-
     for (j = 0; j < dim; j++) {
         centroid[j] /= (im - i0);
         dimVariance[j] -= (im - i0) * centroid[j] * centroid[j];
@@ -831,7 +830,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("tlc_nyc_choose_params.txt", "a") : fopen("tlc_nyc.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("hetero_choose_params.txt", "a") : fopen("hetero.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -887,7 +886,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        3
+#define DATASET        4
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -977,8 +976,11 @@ int main() {
     FILE *fp = fopen("../data_sets/heterogeneity_activity_norm.dat", "rb");
 
     dim = 24;
-//    batch_size = 16000000;
+    ndata = 16000000;
     batch_size = 10000;
+
+    n_batches = ndata / batch_size;
+
     data = (double *) calloc(dim * batch_size, sizeof(double));
     if (fp != NULL) {
         fread(data, sizeof(double), dim * batch_size, fp);
