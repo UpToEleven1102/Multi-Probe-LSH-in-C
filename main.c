@@ -830,7 +830,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("hetero_choose_params.txt", "a") : fopen("hetero.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("tlc_nyc_choose_params.txt", "a") : fopen("tlc_nyc.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -886,7 +886,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        4
+#define DATASET        3
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
