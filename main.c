@@ -831,7 +831,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("higgs_choose_params.txt", "a") : fopen("higgs.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("tlc_nyc_choose_params.txt", "a") : fopen("tlc_nyc.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -887,7 +887,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        1
+#define DATASET        3
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -956,14 +956,17 @@ int main() {
 #endif
 
 #if (DATASET == 3)
-    FILE *fp = fopen("../data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
+    FILE *fp = fopen("./data_sets/tlc_nyc2016_norm_41M_dim16.dat", "rb");
 
     dim = 16;
-//    batch_size = 41000000;
-    batch_size = 100000;
-    data = (double *) calloc(dim * batch_size, sizeof(double));
+    ndata = 41000000;
+    batch_size = 10000;
+
+    n_batches = ndata /batch_size;
+
+    data = (double *) calloc(dim * ndata, sizeof(double));
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * batch_size, fp);
+        fread(data, sizeof(double), dim * ndata, fp);
         fclose(fp);
     } else {
         printf("failed to open file");
