@@ -223,7 +223,15 @@ double exactClosestDistance(int dim, int i0, int im, int idx, double *data) {
     double minDistance = RAND_MAX;
     int min_idx = -1;
     for (int i = i0; i < im; ++i) {
-        double distance = calculateDistance(dim, idx, i, data);
+        double distance = 0;
+
+        for (int j = 0; j < dim; ++j) {
+            distance += (data[dim*idx + j] - data[dim * i + j]) * (data[dim * idx + j] - data[dim * i + j]);
+        }
+
+        distance = sqrt(distance);
+
+
         if (distance < minDistance) {
             minDistance = distance;
 //            min_idx = i;
@@ -695,7 +703,19 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
                     for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                         counter++;
-                        distance = calculateDistance(dim, i + batch_number * im, buckets_ptr->data_indices[k][j], data);
+
+                        int idx = i + batch_number * im;
+                        int idx2 = buckets_ptr->data_indices[k][j];
+
+                        distance = 0;
+
+                        for (int l = 0; l < dim; ++l) {
+                            distance += (data[dim*idx + l] - data[dim * idx2 + l]) * (data[dim * idx + l] - data[dim * idx2 + l]);
+
+                        }
+
+                        distance = sqrt(distance);
+
                         if (distance < min_distance) {
                             min_distance = distance;
                             result_idx = buckets_ptr->data_indices[k][j];
@@ -705,6 +725,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             }
         }
 
+        //probably cost a lot of performance
         exact_distance = batch_number == 0 ? exactClosestDistance(dim, i0, im, i, data) : exactClosestDistance(dim, 0,
                                                                                                                batch_number *
                                                                                                                im,
@@ -738,7 +759,19 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             double distance;
             for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                 counter++;
-                distance = calculateDistance(dim, i + batch_number * im, buckets_ptr->data_indices[k][j], data);
+
+                int idx = i + batch_number * im;
+                int idx2 = buckets_ptr->data_indices[k][j];
+
+                distance = 0;
+
+                for (int l = 0; l < dim; ++l) {
+                    distance += (data[dim*idx + l] - data[dim * idx2 + l]) * (data[dim * idx + l] - data[dim * idx2 + l]);
+
+                }
+
+                distance = sqrt(distance);
+
                 if (distance < min_distance) {
                     min_distance = distance;
                     result_idx = buckets_ptr->data_indices[k][j];
@@ -876,7 +909,7 @@ int main() {
     dim = 29;
 
     ndata = 9000000;
-    batch_size = 1000;
+    batch_size = 10000;
     ntest_data = 2000000;
 
 //    ndata = 9000;
@@ -889,7 +922,7 @@ int main() {
 
     data = (double *) calloc(dim * (ndata + ntest_data), sizeof(double));
 
-    FILE *fp = fopen("../data_sets/tr_HIGGS.dat", "rb");
+    FILE *fp = fopen("./data_sets/tr_HIGGS.dat", "rb");
 
     queries = data; // 1st nqueries data in data[] are queries, i.e. i0=nqueries, im=batch_size
     if (fp != NULL) {
