@@ -830,7 +830,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("tlc_nyc_choose_params.txt", "a") : fopen("tlc_nyc.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("hep_mass_choose_params.txt", "a") : fopen("hepmass.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -886,7 +886,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        4
+#define DATASET        5
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -989,6 +989,25 @@ int main() {
         printf("failed to open file");
     }
 #endif
+
+#if (DATASET == 5)
+    FILE *fp = fopen("./data_sets/heterogeneity_activity_norm.dat", "rb");
+
+    dim = 28;
+    ndata = 21000000;
+    batch_size = 10000;
+
+    n_batches = ndata / batch_size;
+
+    data = (double *) calloc(dim * batch_size, sizeof(double));
+    if (fp != NULL) {
+        fread(data, sizeof(double), dim * batch_size, fp);
+        fclose(fp);
+    } else {
+        printf("failed to open file");
+    }
+#endif
+
     // add more data sets here
 
     centroid = (double *) calloc(dim, sizeof(double));
