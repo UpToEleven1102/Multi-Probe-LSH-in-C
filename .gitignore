@@ -7,3 +7,5 @@ data_sets/
 cmake-build-debug/
 
 LSH_iid.c
+
+lsh

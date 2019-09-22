@@ -999,17 +999,17 @@ int main() {
         fread(data, sizeof(double), dim * ndata, fp);
         fclose(fp);
     } else {
-        printf("failed to open file");
+        printf("failed to open tr_HIGGS");
         return 1;
     }
 
-    fp = fopen("../data_sets/ts_HIGGS.dat", "rb");
+    fp = fopen("./data_sets/ts_HIGGS.dat", "rb");
 
     if (fp != NULL) {
         fread(data + (dim * ndata), sizeof(double), dim * ntest_data, fp);
         fclose(fp);
     } else {
-        printf("failed to open file");
+        printf("failed to open ts_HIGGS");
         return 1;
     }
 #endif
@@ -1096,7 +1096,7 @@ int main() {
 //    im = n_smalldata;
 
     im = batch_size;
-    i0 = batch_size / 10;
+    i0 = floor(batch_size *.1);
 
     printf("Initializing paramaters...\n");
 
