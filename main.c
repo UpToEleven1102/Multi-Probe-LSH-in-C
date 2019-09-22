@@ -10,6 +10,8 @@
 #define min(x, y)    ((x) < (y) ? (x) : (y))
 #define max(x, y)    ((x) > (y) ? (x) : (y))
 
+#define PI                 3.1415926535
+#define _DIM             128
 //read dataset, correct?
 
 struct LSH_Parameters {
@@ -359,6 +361,11 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
     printf("final L %d m %d w %f \n", _L, _m, _W);
 
+    FILE *fp = fopen("choose_params.txt", "a");
+
+    fprintf(fp, "Final m: %d, l: %d, w: %f \n", _m, _L, _W);
+    fclose(fp);
+
     // HERE: Choose the m, L, W that produce the best performance
     param_ptr->m = _m;
     param_ptr->L = _L;
@@ -382,214 +389,214 @@ int applyLSH(int dim, int i0, int im, double *data, struct LSH_Parameters *param
              struct LSH_Buckets *buckets_ptr, struct LSH_Performance *performance_ptr, int batch_number) // output
 /*** datum_hashVal[L_max][m_max], uses only [L][m] ***/
 {
-if (batch_number == 0) {
+    if (batch_number == 0) {
 /**************** Apply LSH for first batch **************/
 
-    int i, j, k, max_nclusters, max_clustersize;
-    char membership, m, m_max, L, L_max, ll, mm;
-    double tmp, W, time_start, time_end;
+        int i, j, k, max_nclusters, max_clustersize;
+        char membership, m, m_max, L, L_max, ll, mm;
+        double tmp, W, time_start, time_end;
 
-    time_start = clock();
-    m = param_ptr->m;
-    m_max = param_ptr->m_max;
-    L = param_ptr->L;
-    L_max = param_ptr->L_max;
-    W = param_ptr->W;
+        time_start = clock();
+        m = param_ptr->m;
+        m_max = param_ptr->m_max;
+        L = param_ptr->L;
+        L_max = param_ptr->L_max;
+        W = param_ptr->W;
 
-    max_nclusters = buckets_ptr->max_nclusters;
-    max_clustersize = buckets_ptr->max_clustersize;
+        max_nclusters = buckets_ptr->max_nclusters;
+        max_clustersize = buckets_ptr->max_clustersize;
 
-    for (i = 0; i < max_nclusters; ++i) {
-        buckets_ptr->clustersize_limit[i] = max_clustersize;
-        buckets_ptr->clustersize[i] = 0;
-    }
-
-    for (i = 0; i < max_nclusters; i++) {
-        for (j = 0; j < L_max * m_max; ++j) {
-            buckets_ptr->cluster_hashval[i][j] = 0;
+        for (i = 0; i < max_nclusters; ++i) {
+            buckets_ptr->clustersize_limit[i] = max_clustersize;
+            buckets_ptr->clustersize[i] = 0;
         }
-        for (j = 0; j < max_clustersize; ++j) {
-            buckets_ptr->data_indices[i][j] = 0;
+
+        for (i = 0; i < max_nclusters; i++) {
+            for (j = 0; j < L_max * m_max; ++j) {
+                buckets_ptr->cluster_hashval[i][j] = 0;
+            }
+            for (j = 0; j < max_clustersize; ++j) {
+                buckets_ptr->data_indices[i][j] = 0;
+            }
         }
-    }
 
 /**************** Calculate hash val for each datum and put to a bucket **************/
-    int isEqual, new_limit, cluster_size;
-    buckets_ptr->nclusters = 0;
-    for (k = 0; k < (buckets_ptr->nclusters); k++) buckets_ptr->clustersize[k] = 0;
-    for (k = 0; k < max_nclusters; k++) buckets_ptr->clustersize_limit[k] = max_clustersize;
+        int isEqual, new_limit, cluster_size;
+        buckets_ptr->nclusters = 0;
+        for (k = 0; k < (buckets_ptr->nclusters); k++) buckets_ptr->clustersize[k] = 0;
+        for (k = 0; k < max_nclusters; k++) buckets_ptr->clustersize_limit[k] = max_clustersize;
 
-    for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
-        memcpy(datum, data + i * dim, dim * sizeof(double));
+        for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
+            memcpy(datum, data + i * dim, dim * sizeof(double));
 
 //        printf("datum hashval: \n");
 
-        for (ll = 0; ll < L; ll++)
-            for (mm = 0; mm < m; mm++) {
-                tmp = 0.0;
-                for (j = 0; j < dim; j++)
-                    tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
-                datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
+            for (ll = 0; ll < L; ll++)
+                for (mm = 0; mm < m; mm++) {
+                    tmp = 0.0;
+                    for (j = 0; j < dim; j++)
+                        tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
+                    datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
 //                printf("%d \n",datum_hashval[ll * m_max + mm]);
-            }
+                }
 
 //        getchar();
 
-        for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = true;
-            for (int l = 0; l < L; ++l) {
-                for (int n = 0; n < m; ++n) {
-                    if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
-                        isEqual = false;
+            for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
+                isEqual = true;
+                for (int l = 0; l < L; ++l) {
+                    for (int n = 0; n < m; ++n) {
+                        if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
+                            isEqual = false;
+                            break;
+                        }
+                    }
+
+                    if (!isEqual) {
                         break;
                     }
                 }
 
-                if (!isEqual) {
+                if (isEqual) {
+                    buckets_ptr->clustersize[k]++;
+                    cluster_size = buckets_ptr->clustersize[k];
+                    if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
+                        buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
+                        new_limit = buckets_ptr->clustersize_limit[k];
+
+                        buckets_ptr->data_indices[k] =
+                                (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
+                        if (max_clustersize < buckets_ptr->clustersize_limit[k])
+                            max_clustersize = buckets_ptr->clustersize_limit[k];
+                    }
+                    buckets_ptr->data_indices[k][cluster_size - 1] = i;
+
                     break;
                 }
             }
-
-            if (isEqual) {
-                buckets_ptr->clustersize[k]++;
-                cluster_size = buckets_ptr->clustersize[k];
-                if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
-                    buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
-                    new_limit = buckets_ptr->clustersize_limit[k];
-
-                    buckets_ptr->data_indices[k] =
-                            (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
-                    if (max_clustersize < buckets_ptr->clustersize_limit[k])
-                        max_clustersize = buckets_ptr->clustersize_limit[k];
-                }
-                buckets_ptr->data_indices[k][cluster_size - 1] = i;
-
-                break;
-            }
-        }
-        if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
-            if (buckets_ptr->nclusters == max_nclusters) { // max_nclusters too small
-                printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
-                       max_nclusters);
-                break;
+            if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
+                if (buckets_ptr->nclusters == max_nclusters) { // max_nclusters too small
+                    printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
+                           max_nclusters);
+                    break;
 //                return 0;
-            }
-            buckets_ptr->nclusters++;
-
-            cluster_size = buckets_ptr->clustersize[k];
-            buckets_ptr->clustersize[k]++;
-
-            buckets_ptr->data_indices[k][cluster_size] = i;
-
-            for (ll = 0; ll < L; ll++)
-                for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
-                    buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
                 }
+                buckets_ptr->nclusters++;
+
+                cluster_size = buckets_ptr->clustersize[k];
+                buckets_ptr->clustersize[k]++;
+
+                buckets_ptr->data_indices[k][cluster_size] = i;
+
+                for (ll = 0; ll < L; ll++)
+                    for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
+                        buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
+                    }
+            }
         }
-    }
 
-    time_end = clock();
+        time_end = clock();
 
-    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
-} else {
+        performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
+    } else {
 /**************** Apply LSH for incoming batches **************/
 
-    int i, j, k, max_nclusters, max_clustersize;
-    char membership, m, m_max, L, L_max, ll, mm;
-    double tmp, W, time_start, time_end;
+        int i, j, k, max_nclusters, max_clustersize;
+        char membership, m, m_max, L, L_max, ll, mm;
+        double tmp, W, time_start, time_end;
 
-    time_start = clock();
-    m = param_ptr->m;
-    m_max = param_ptr->m_max;
-    L = param_ptr->L;
-    L_max = param_ptr->L_max;
-    W = param_ptr->W;
+        time_start = clock();
+        m = param_ptr->m;
+        m_max = param_ptr->m_max;
+        L = param_ptr->L;
+        L_max = param_ptr->L_max;
+        W = param_ptr->W;
 
-    max_nclusters = buckets_ptr->max_nclusters;
-    max_clustersize = buckets_ptr->max_clustersize;
+        max_nclusters = buckets_ptr->max_nclusters;
+        max_clustersize = buckets_ptr->max_clustersize;
 
 /**************** Calculate hash val for each datum and put to a bucket **************/
-    int isEqual, new_limit, cluster_size;
+        int isEqual, new_limit, cluster_size;
 
-    i0 = batch_number * im;
-    im = im + i0;
+        i0 = batch_number * im;
+        im = im + i0;
 
-    for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
-        memcpy(datum, data + i * dim, dim * sizeof(double));
+        for (i = i0; i < im; i++) {/*** Calc hash val of each datum and put to a bucket ***/
+            memcpy(datum, data + i * dim, dim * sizeof(double));
 
 //        printf("datum hashval: \n");
 
-        for (ll = 0; ll < L; ll++)
-            for (mm = 0; mm < m; mm++) {
-                tmp = 0.0;
-                for (j = 0; j < dim; j++)
-                    tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
-                datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
+            for (ll = 0; ll < L; ll++)
+                for (mm = 0; mm < m; mm++) {
+                    tmp = 0.0;
+                    for (j = 0; j < dim; j++)
+                        tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
+                    datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
 //                printf("%d \n",datum_hashval[ll * m_max + mm]);
-            }
+                }
 
 //        getchar();
 
-        for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
-            isEqual = true;
+            for (k = 0; k < (buckets_ptr->nclusters); k++) {// Compare datum_hashval with cluster hashvals
+                isEqual = true;
 
-            for (int l = 0; l < L; ++l) {
-                for (int n = 0; n < m; ++n) {
-                    if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
-                        isEqual = false;
+                for (int l = 0; l < L; ++l) {
+                    for (int n = 0; n < m; ++n) {
+                        if (datum_hashval[l * param_ptr->m_max + n] != buckets_ptr->cluster_hashval[k][l * param_ptr->m_max + n]) {
+                            isEqual = false;
+                            break;
+                        }
+                    }
+
+                    if (!isEqual) {
                         break;
                     }
                 }
 
-                if (!isEqual) {
+
+                if (isEqual) {
+                    buckets_ptr->clustersize[k]++;
+                    cluster_size = buckets_ptr->clustersize[k];
+                    if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
+                        buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
+                        new_limit = buckets_ptr->clustersize_limit[k];
+
+                        //problem here?? how to realloc and actually change the pointer of the data??
+                        buckets_ptr->data_indices[k] =
+                                (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
+                        if (max_clustersize < buckets_ptr->clustersize_limit[k])
+                            max_clustersize = buckets_ptr->clustersize_limit[k];
+                    }
+                    buckets_ptr->data_indices[k][cluster_size - 1] = i;
+
                     break;
                 }
             }
-
-
-            if (isEqual) {
-                buckets_ptr->clustersize[k]++;
-                cluster_size = buckets_ptr->clustersize[k];
-                if (cluster_size >= buckets_ptr->clustersize_limit[k]) {// Grow ptr->data_indices
-                    buckets_ptr->clustersize_limit[k] += 1024; /////////////// Increase by 1024
-                    new_limit = buckets_ptr->clustersize_limit[k];
-
-                    //problem here?? how to realloc and actually change the pointer of the data??
-                    buckets_ptr->data_indices[k] =
-                            (int *) realloc(buckets_ptr->data_indices[k], new_limit * sizeof(int));
-                    if (max_clustersize < buckets_ptr->clustersize_limit[k])
-                        max_clustersize = buckets_ptr->clustersize_limit[k];
-                }
-                buckets_ptr->data_indices[k][cluster_size - 1] = i;
-
-                break;
-            }
-        }
-        if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
-            if (buckets_ptr->nclusters == max_nclusters) { // max_nclusters too small
-                printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
-                       max_nclusters);
-                break;
+            if (k == (buckets_ptr->nclusters)) {// datum not in any existing bucket. Create new bucket.
+                if (buckets_ptr->nclusters == max_nclusters) { // max_nclusters too small
+                    printf("ERROR in applyLSH (): max_nclusters too small.n data: %d n max clusters: %d\n\n", im - i0,
+                           max_nclusters);
+                    break;
 //                return 0;
-            }
-            buckets_ptr->nclusters++;
-
-            cluster_size = buckets_ptr->clustersize[k];
-            buckets_ptr->clustersize[k]++;
-
-            buckets_ptr->data_indices[k][cluster_size] = i;
-
-            for (ll = 0; ll < L; ll++)
-                for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
-                    buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
                 }
+                buckets_ptr->nclusters++;
+
+                cluster_size = buckets_ptr->clustersize[k];
+                buckets_ptr->clustersize[k]++;
+
+                buckets_ptr->data_indices[k][cluster_size] = i;
+
+                for (ll = 0; ll < L; ll++)
+                    for (mm = 0; mm < m; mm++) { // buckets_ptr->cluster_hashval[k] = datum_hashval
+                        buckets_ptr->cluster_hashval[k][ll * m_max + mm] = datum_hashval[ll * m_max + mm];
+                    }
+            }
         }
+
+        time_end = clock();
+
+        performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
     }
-
-    time_end = clock();
-
-    performance_ptr->ClusteringTime = 0.000001 * (time_end - time_start);
-}
 
     return 1;
 } /****** End of function applyLSH() ******/
@@ -830,7 +837,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                      (m * L * buckets_ptr->nclusters) /
                                      (double) (dim * (im * batch_number - (double) batch_number / 10));
 
-        FILE *of = batch_number == 0 ? fopen("tlc_choose_params.txt", "a") : fopen("tlc.txt", "a");
+        FILE *of = batch_number == 0 ? fopen("choose_params.txt", "a") : fopen("output.txt", "a");
 
         (batch_number == 0) ?
         fprintf(of,
@@ -886,7 +893,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET        3
+#define DATASET       1
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -903,6 +910,70 @@ int main() {
     buckets_ptr = (struct LSH_Buckets *) malloc(sizeof(struct LSH_Buckets));
 
     printf("Reading data...\n");
+
+#if (DATASET == 0) /*** nclusters ball-shaped clusters. STDEV=2.0.  ***/
+    int i, j, k, nclusters = 100;
+    dim = _DIM;
+    ndata= 5000000;
+    double tmp, length, U1, U2, *N;
+    double centers[200][dim], stdevs[200], clustersizes[200],cluster_start,cluster_end;
+
+    batch_size = 10000;
+    n_batches = ndata / batch_size;
+    nqueries = batch_size / 10;
+
+    N = (double *) calloc( ndata, sizeof( double ) ) ;
+    for(k=0; k<nclusters/10; k++) {
+        clustersizes[k]    =   10*ndata/(2*nclusters);
+        clustersizes[k+nclusters/10]   = 10*ndata/(4*nclusters);
+        clustersizes[k+2*nclusters/10] = 10*ndata/(8*nclusters);
+        clustersizes[k+3*nclusters/10] = 10*ndata/(16*nclusters);
+        clustersizes[k+4*nclusters/10] = 10*ndata/(32*nclusters);
+        clustersizes[k+5*nclusters/10] = 10*ndata/(64*nclusters);
+        clustersizes[k+6*nclusters/10] = 10*ndata/(128*nclusters);
+        clustersizes[k+7*nclusters/10] = 10*ndata/(256*nclusters);
+        clustersizes[k+8*nclusters/10] = 10*ndata/(512*nclusters);
+        clustersizes[k+9*nclusters/10] = 10*ndata/(512*nclusters);
+    }
+
+    data = (double*)malloc(dim * ndata * sizeof(double));
+
+    for(k=0; k<nclusters; k++) {
+        for(j=0; j<dim; j++) centers[k][j]= 10.0*((double)rand()/RAND_MAX - 0.5);
+        stdevs[k] = 2.0 ;
+    }
+    tmp = 1.0/RAND_MAX ; /*** Generating data[i] in [-0.5, 0.5] ***/
+    for(i=0;i<ndata*dim;i++) data[i] = (double)rand()*tmp - 0.5;
+
+    for(i=0;i<ndata;i++) {/*** Make each datum unit length ***/
+        length = 0.0 ;
+        for(j=0; j<dim; j++) length += data[i*dim+j]*data[i*dim+j];
+        length = 1.0/sqrt(length) ;
+        for(j=0; j<dim; j++) data[i*dim+j] = data[i*dim+j]*length ;
+    }
+
+    for(i=0;i<ndata/2;i++){ /*** N[i] is Gausssian distributed ***/
+        U1=(double)rand()/RAND_MAX;
+        U2=(double)rand()/RAND_MAX;
+        N[2*i]=sqrt(-2*log(U1))*cos(2*PI*U2);
+        N[2*i+1]=sqrt(-2*log(U1))*sin(2*PI*U2);
+    }
+
+    cluster_start = 0 ;
+    for(k=0; k<nclusters; k++) {
+        cluster_end = cluster_start + clustersizes[k] ;
+        for(i=cluster_start; i<cluster_end; i++) {
+            N[i] = stdevs[k]*N[i] ;
+            for(j=0; j<dim; j++) {
+                data[i*dim+j] *= N[i] ;
+                data[i*dim+j] += centers[k][j];
+            }
+        }
+        cluster_start = cluster_end ;
+    }
+
+    free(N) ;
+#endif
 
 #if (DATASET == 1)/*** Read data from HIGGS binary file of double floating-pt data ***/
     dim = 29;
@@ -929,6 +1000,7 @@ int main() {
         fclose(fp);
     } else {
         printf("failed to open file");
+        return 1;
     }
 
     fp = fopen("../data_sets/ts_HIGGS.dat", "rb");
@@ -938,6 +1010,7 @@ int main() {
         fclose(fp);
     } else {
         printf("failed to open file");
+        return 1;
     }
 #endif
 
@@ -1106,5 +1179,3 @@ int main() {
     // first deallocate memories inside buckets_ptr, then deallocate buckets_ptr
 
 } /************ End of main() ************/
-
-
