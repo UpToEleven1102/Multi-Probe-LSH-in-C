@@ -89,6 +89,86 @@ double gaussian_rand(int phase) {
     return z0;
 }
 
+
+/*************** helper functions *********************/
+
+double calculateDistance(int dim, int idx1, int idx2, const double *data) {
+    double distance = 0;
+    for (int i = 0; i < dim; ++i) {
+        distance += (data[dim * idx1 + i] - data[dim * idx2 + i]) * (data[dim * idx1 + i] - data[dim * idx2 + i]);
+    }
+
+    return sqrt(distance);
+}
+
+int compareHashVals(struct LSH_Parameters *param_ptr, const char *datum_hashval, const char *cluster_hashval) {
+    for (int i = 0; i < param_ptr->L; ++i) {
+        for (int j = 0; j < param_ptr->m; ++j) {
+            if (datum_hashval[i * param_ptr->m_max + j] != cluster_hashval[i * param_ptr->m_max + j]) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+double exactClosestDistance(int dim, int i0, int im, int idx, const double *data) {
+    double minDistance = RAND_MAX;
+    for (int i = i0; i < im; ++i) {
+        double distance = 0;
+
+        for (int j = 0; j < dim; ++j) {
+            distance += (data[dim*idx + j] - data[dim * i + j]) * (data[dim * idx + j] - data[dim * i + j]);
+        }
+
+        distance = sqrt(distance);
+
+
+        if (distance < minDistance) {
+            minDistance = distance;
+        }
+    }
+
+    return minDistance;
+}
+
+double
+distanceToBucket(int dim, struct LSH_Parameters *param_ptr, const double *datum, const char *datum_hashval,
+                 const char *bucket_hashval) {
+    double distance = 0, w, leftDistance, tmp; // temp = ai * q + bi
+    int l, m, n_step, ll, mm, m_max;
+    l = param_ptr->L;
+    m = param_ptr->m;
+    w = param_ptr->W;
+    m_max = param_ptr->m_max;
+
+    for (ll = 0; ll < l; ++ll) {
+        for (mm = 0; mm < m; ++mm) {
+            tmp = 0;
+            n_step = bucket_hashval[ll * m_max + mm] - datum_hashval[ll * m_max + mm];
+
+//            printf("%d, %d \n", bucket_hashval[ll * m_max + mm] ,datum_hashval[ll * m_max + mm]);
+
+            if (n_step != 0) {
+                distance += (abs(n_step) - 1) * w;
+
+                for (int j = 0; j < dim; ++j) {
+                    tmp += (datum[j] - param_ptr->b[j]) * param_ptr->hfunction[ll * m_max + mm][j];
+
+                }
+
+                leftDistance = tmp - (datum_hashval[ll * m_max + mm] * w);
+
+                distance += n_step < 0 ? leftDistance : w - leftDistance;
+            }
+
+        }
+    }
+
+    return distance;
+}
+
 /**************************************************************************/
 /***  Array sizes: centroid[dim],  dimMinMax[2*dim],  dimVariance[dim]  ***/
 /***  Array sizes: datum[dim], cluster_center[2][dim], cluster_size[2]  ***/
@@ -195,90 +275,6 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
 
     printf("Done init_LSHparameters\n");
     return 1;
-}
-
-/*************** helper functions *********************/
-
-double calculateDistance(int dim, int idx1, int idx2, const double *data) {
-    double distance = 0;
-    for (int i = 0; i < dim; ++i) {
-        distance += (data[dim * idx1 + i] - data[dim * idx2 + i]) * (data[dim * idx1 + i] - data[dim * idx2 + i]);
-    }
-
-    return sqrt(distance);
-}
-
-int compareHashVals(struct LSH_Parameters *param_ptr, const char *datum_hashval, const char *cluster_hashval) {
-    for (int i = 0; i < param_ptr->L; ++i) {
-        for (int j = 0; j < param_ptr->m; ++j) {
-            if (datum_hashval[i * param_ptr->m_max + j] != cluster_hashval[i * param_ptr->m_max + j]) {
-                return 0;
-            }
-        }
-    }
-
-    return 1;
-}
-
-double exactClosestDistance(int dim, int i0, int im, int idx, double *data) {
-    double minDistance = RAND_MAX;
-    int min_idx = -1;
-    for (int i = i0; i < im; ++i) {
-        double distance = 0;
-
-        for (int j = 0; j < dim; ++j) {
-            distance += (data[dim*idx + j] - data[dim * i + j]) * (data[dim * idx + j] - data[dim * i + j]);
-        }
-
-        distance = sqrt(distance);
-
-
-        if (distance < minDistance) {
-            minDistance = distance;
-//            min_idx = i;
-        }
-//        printf("i: %d - distance: %f \n", i, distance);
-    }
-
-//    printf("closest idx: %d \n", min_idx);
-
-    return minDistance;
-}
-
-double
-distanceToBucket(int dim, struct LSH_Parameters *param_ptr, const double *datum, const char *datum_hashval,
-                 const char *bucket_hashval) {
-    double distance = 0, w, leftDistance, tmp; // temp = ai * q + bi
-    int l, m, n_step, ll, mm, m_max;
-    l = param_ptr->L;
-    m = param_ptr->m;
-    w = param_ptr->W;
-    m_max = param_ptr->m_max;
-
-    for (ll = 0; ll < l; ++ll) {
-        for (mm = 0; mm < m; ++mm) {
-            tmp = 0;
-            n_step = bucket_hashval[ll * m_max + mm] - datum_hashval[ll * m_max + mm];
-
-//            printf("%d, %d \n", bucket_hashval[ll * m_max + mm] ,datum_hashval[ll * m_max + mm]);
-
-            if (n_step != 0) {
-                distance += (abs(n_step) - 1) * w;
-
-                for (int j = 0; j < dim; ++j) {
-                    tmp += (datum[j] - param_ptr->b[j]) * param_ptr->hfunction[ll * m_max + mm][j];
-
-                }
-
-                leftDistance = tmp - (datum_hashval[ll * m_max + mm] * w);
-
-                distance += n_step < 0 ? leftDistance : w - leftDistance;
-            }
-
-        }
-    }
-
-    return distance;
 }
 
 /******************************************************************************/
@@ -788,8 +784,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                                                                                                batch_number *
                                                                                                                im + i,
                                                                                                                data);
-
-
         if (performance_ptr) {
             time_end = clock();
 
