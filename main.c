@@ -193,7 +193,7 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
             }
         }
 
-
+    printf("Done init_LSHparameters\n");
     return 1;
 }
 
@@ -378,6 +378,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     }
     free(performances);
     free(datum_hashval);
+
+    printf("Done choose_LSHparameters \n");
 
     return 1;
 }
