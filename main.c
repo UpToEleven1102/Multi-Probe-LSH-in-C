@@ -331,7 +331,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
         }
 
     double wrst_relative_dist_threshold = 1.3;
-    double avg_rho_threshold = .8;
+    double avg_rho_threshold = .9;
 
     int _L = -1, _m = -1;
     double _W = -1, min_clustering_time = RAND_MAX, min_search_time = RAND_MAX;
@@ -882,7 +882,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET       1
+#define DATASET     0
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
@@ -1043,9 +1043,9 @@ int main() {
 
     n_batches = ndata / batch_size;
 
-    data = (double *) calloc(dim * batch_size, sizeof(double));
+    data = (double *) calloc(dim * ndata, sizeof(double));
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * batch_size, fp);
+        fread(data, sizeof(double), dim * ndata,  fp);
         fclose(fp);
     } else {
         printf("failed to open file");
@@ -1061,9 +1061,9 @@ int main() {
 
     n_batches = ndata / batch_size;
 
-    data = (double *) calloc(dim * batch_size, sizeof(double));
+    data = (double *) calloc(dim * ndata, sizeof(double));
     if (fp != NULL) {
-        fread(data, sizeof(double), dim * batch_size, fp);
+        fread(data, sizeof(double), dim * ndata, fp);
         fclose(fp);
     } else {
         printf("failed to open file");
