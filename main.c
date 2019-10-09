@@ -777,17 +777,19 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
         }
 
-        /* ---- calculate exact distance of the closest to the query ---- */
-        exact_distance = batch_number == 0 ? exactClosestDistance(dim, i0, im, i, data) : exactClosestDistance(dim, 0,
-                                                                                                               batch_number *
-                                                                                                               im,
-                                                                                                               batch_number *
-                                                                                                               im + i,
-                                                                                                               data);
         if (performance_ptr) {
             time_end = clock();
 
+
             search_time = 0.000001 * (time_end - time_start);
+
+            /* ---- calculate exact distance of the closest to the query ---- */
+            exact_distance = batch_number == 0 ? exactClosestDistance(dim, i0, im, i, data) : exactClosestDistance(dim, 0,
+                                                                                                                   batch_number *
+                                                                                                                   im,
+                                                                                                                   batch_number *
+                                                                                                                   im + i,
+                                                                                                                   data);
 
             performance_ptr->avg_SearchingTime += search_time;
             if (performance_ptr->wrst_SearchingTime < search_time) performance_ptr->wrst_SearchingTime = search_time;
