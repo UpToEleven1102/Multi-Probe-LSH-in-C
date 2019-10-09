@@ -5,14 +5,14 @@
 #include <string.h>
 #include <time.h>
 
-#include "lib/utils.h"
-
 #define min(x, y)    ((x) < (y) ? (x) : (y))
 #define max(x, y)    ((x) > (y) ? (x) : (y))
 
-#define PI                 3.1415926535
 #define _DIM             128
-//read dataset, correct?
+
+typedef int bool;
+#define true 1;
+#define  false 0;
 
 struct LSH_Parameters {
     char m_max, m,
@@ -51,22 +51,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr, int batch_number);
 
-//double gaussian_rand(char phase) /*** phase = 0 or 1 ***/
-//{
-//    double U, V, Z, r;
-//
-//    U = 2.0 * rand() / RAND_MAX - 1.0;
-//    V = 2.0 * rand() / RAND_MAX - 1.0;
-//    r = U * U + V * V;
-//    r = sqrt(-2.0 * log(r) / r);
-//
-//    if (phase == 0) {
-//        Z = U * r;
-//    } else { Z = V * r; }
-//
-//    return Z;
-//}
-//print dataset
 double z1;
 
 double gaussian_rand(int phase) {
@@ -607,18 +591,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
     n_probing_buckets = max(n_probing_buckets, 2);
 
-//    if (batch_number != 0) {
-//        printf("n cluster %d : cluster sizes: \n", buckets_ptr->nclusters);
-//
-//        for (int l = 0; l < buckets_ptr->nclusters; ++l) {
-//            printf("%d \n", buckets_ptr->clustersize[l]);
-//            counter += buckets_ptr->clustersize[l];
-//        }
-//
-//        printf("n data : %d", counter);
-//        getchar();
-//    }
-
     int i, j, k, ll, mm, m, m_max, L, result_idx;
     char isEqual;
     double tmp, exact_distance, W, time_start, time_end, min_distance, search_time;
@@ -647,19 +619,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
         //calculate hashvals
         memcpy(datum, data + i * dim + batch_number * im * dim, dim * sizeof(double));
 
-//        if (batch_number != 0) {
-//            printDataSet(dim, (batch_number + 1) * im, data);
-//
-//            getchar();
-//
-//            printf("datum idx %d \n", i + batch_number * im);
-//
-//            printDataSet(dim, 1, datum);
-//            getchar();
-//        }
-
-
-//        if (batch_number != 0) printf("datum hash vals: \n");
         for (ll = 0; ll < L; ll++)
             for (mm = 0; mm < m; mm++) {
                 tmp = 0.0;
@@ -884,7 +843,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 }
 
 
-#define DATASET     0
+#define DATASET     1
 
 int main() {
     int dim, batch_size, i0, im, nqueries, cluster_size[2], n_batches, ndata, ntest_data;
