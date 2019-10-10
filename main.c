@@ -319,7 +319,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
                        (min_clustering_time + min_search_time)) {
                     min_clustering_time = performances[L][m][W_count].ClusteringTime;
                     min_search_time = performances[L][m][W_count].avg_SearchingTime;
-                    _L = L;
+                    _L = 1;
                     _m = m;
                     _W = W;
                 }
@@ -573,11 +573,10 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr, int batch_number)                              // output
 {
-    int counter = 0, n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
+    int n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
 
     n_probing_buckets = max(n_probing_buckets, 2);
-
-    int i, j, k, ll, mm, m, m_max, L, result_idx;
+    int i, j, k, ll, mm, m, m_max, L, result_idx, counter = 0;
     char isEqual;
     double tmp, exact_distance, W, time_start, time_end, min_distance, search_time;
 
@@ -646,11 +645,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                     double distance;
                     notFound = false;
 
-//                    if (batch_number != 0){
-//                        printf("Found bucket %d \n", k);
-//                        getchar();
-//                    }
-
                     for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                         counter++;
 
@@ -675,11 +669,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 }
             }
         }
-
-//        if (batch_number != 0) {
-//            printf("Found distance : %f, Exact distance: %f \n", min_distance, exact_distance);
-//            getchar();
-//        }
 
         /* ---- sort bucket_distances array ---- */
         int tmp_idx;
