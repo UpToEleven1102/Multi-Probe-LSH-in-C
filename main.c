@@ -223,7 +223,7 @@ int init_LSHparameters(int dim, int i0, int im, double *data,             // inp
 
 /****** Enter initial values for some of the LSH parameters ******/
     param_ptr->m_max = min((int) (0.25 * dim + 0.5), 12);
-    param_ptr->L_max = 20;
+    param_ptr->L_max = 1;
     param_ptr->W_init = 0.0;
     for (j = 0; j < dim; j++) {
         tmp = cluster_center[0][j] - cluster_center[1][j];
@@ -280,8 +280,8 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
     struct LSH_Performance ***performances; // Array performances[L_max][m_max][num_Ws]
 
-    W_min = 0.8 * W_init;
-    W_max = 1.5 * W_init;
+    W_min = .1 * W_init;
+    W_max = .9 * W_init;
     num_Ws = (int) (0.5 + (0.1 * W_init + W_max - W_min) / (0.1 * W_init)); //47 // *W_init = 10
 
     performances = (struct LSH_Performance ***) malloc((L_max + 1) * sizeof(struct LSH_Performance **));
@@ -292,7 +292,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     }
 
 /****** Loop thru values of L, M, W to find the best performance parameters ******/
-    for (L = 3; L <= L_max; L += 3)
+    for (L = 0; L <= L_max; L += 3)
         for (m = 2; m <= m_max; m += 1) {
             W_count = 0;
             for (W = W_min; W <= W_max; W += 0.1 * W_init) {
@@ -300,7 +300,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
 
                 ////// Generate buckets using parameters m, L, W and produce search performance results
                 param_ptr->m = m;
-                param_ptr->L = L;
+                param_ptr->L = L + 1;
                 param_ptr->W = W;
                 applyLSH(dim, i0, im, data, param_ptr,                                                  // input
                          datum, datum_hashval,                                                         // buffers
@@ -320,7 +320,7 @@ int choose_LSHparameters(int dim, int i0, int im, double *data,   // input: smal
     int _L = -1, _m = -1;
     double _W = -1, min_clustering_time = RAND_MAX, min_search_time = RAND_MAX;
 
-    for (L = 3; L <= L_max; L += 3)
+    for (L = 0; L <= L_max; L += 3)
         for (m = 2; m <= m_max; m += 1) {
             W_count = 0;
             for (W = W_min; W <= W_max; W += 0.1 * W_init) {
@@ -1091,7 +1091,7 @@ int main() {
            param_ptr->W);
 
     // apply LSH with chosen params
-    printf("Start leting batches to come in... %d number of batches \n", n_batches);
+    printf("Start letting batches to come in... %d number of batches \n", n_batches);
 
     for (int i = 0; i < n_batches; ++i) {
         //reset performance:

@@ -3,6 +3,6 @@ project(LSH_probing C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(LSH_probing main.c lib/utils.c lib/utils.h)
+add_executable(LSH_probing main.c)
 
 target_link_libraries(LSH_probing m)
