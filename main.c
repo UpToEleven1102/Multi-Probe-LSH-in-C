@@ -33,6 +33,7 @@ struct LSH_Buckets {
 
 struct LSH_Performance {
     double ClusteringTime,
+            avg_numb_probed_buckets,
             avg_SearchingTime, wrst_SearchingTime,
             avg_PtsChecked, wrst_PtsChecked,
             avg_Dist, wrst_Dist, avg_RelativeDist, wrst_RelativeDist, // RelativeDist = approx_distance/exact_distance
@@ -573,12 +574,12 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
               double *datum, char *datum_hashval,                                     // buffers
               struct LSH_Performance *performance_ptr, int batch_number)                              // output
 {
-    int n_probing_buckets = (int) (buckets_ptr->nclusters * 5 / 100.0) + 1;
+    int n_probing_buckets = (int) (buckets_ptr->nclusters * .1) + 1;
 
     n_probing_buckets = max(n_probing_buckets, 2);
     int i, j, k, ll, mm, m, m_max, L, result_idx, counter = 0;
     char isEqual;
-    double tmp, exact_distance, W, time_start, time_end, min_distance, search_time;
+    double tmp, exact_distance, W, time_start, time_end, min_distance, search_time, distance;
 
     m = param_ptr->m;
     m_max = param_ptr->m_max;
@@ -611,7 +612,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 for (j = 0; j < dim; j++)
                     tmp += (datum[j] - param_ptr->b[j]) * (param_ptr->hfunction[ll * m_max + mm][j]);
                 datum_hashval[ll * m_max + mm] = (int) floor(tmp / W);
-//                if (batch_number != 0) printf("%d \n", datum_hashval[ll * m_max + mm]);
             }
 
 
@@ -623,7 +623,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             bucket_distances[k] = distanceToBucket(dim, param_ptr, datum, datum_hashval,
                                                    buckets_ptr->cluster_hashval[k]);
 
-//            printf("idx : %d, bucket distance : %f \n", bucket_indices[k], bucket_distances[k]);
             if (notFound) {
                 isEqual = true;
 
@@ -642,7 +641,6 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 }
 
                 if (isEqual) {
-                    double distance;
                     notFound = false;
 
                     for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
@@ -687,10 +685,15 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             }
         }
 
+        int numb_probed_buckets = 0;
         /* --- probe the closest buckets  --- */
-        for (int n = 1; n < n_probing_buckets; ++n) {
+        for (int n = 1; n < buckets_ptr->nclusters; ++n) {
             k = bucket_indices[n];
-            double distance;
+            if (min_distance < bucket_distances[n] || numb_probed_buckets == n_probing_buckets) {
+                break;
+            }
+
+            numb_probed_buckets ++;
             for (j = 0; j < buckets_ptr->clustersize[k]; j++) {
                 counter++;
 
@@ -714,6 +717,8 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
             }
 
         }
+
+        printf("numb_probed_buckets : %d - num buckets: %d \n", numb_probed_buckets, buckets_ptr->nclusters);
 
         if (performance_ptr) {
             time_end = clock();
@@ -745,6 +750,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 performance_ptr->wrst_RelativeDist = min_distance / exact_distance;
 
             performance_ptr->avg_rho += min_distance == exact_distance ? 1 : 0;
+            performance_ptr->avg_numb_probed_buckets += numb_probed_buckets;
 
             performance_ptr->tau +=
                     batch_number == 0 ? counter / (double) (im - i0) : counter / (double) (im * batch_number -
@@ -760,6 +766,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
         performance_ptr->avg_Dist /= ndata;
         performance_ptr->avg_RelativeDist /= ndata;
         performance_ptr->avg_rho /= ndata;
+        performance_ptr->avg_numb_probed_buckets /= ndata;
 
 //        performance_ptr->tau /= ndata;
 
@@ -771,7 +778,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
 
         (batch_number == 0) ?
         fprintf(of,
-                "L: %d, m: %d, W: %f, wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, num_buckets %d, ClusteringTime %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
+                "L: %d, m: %d, W: %f, wrst_PtsChecked %f, avg_PtsChecked %f, wrst_Dist %f, avg_Dist %f, wrst_RelativeDist %f, avg_RelativeDist %f, avg_rho %f, tau %f, tau_other %f, avg_num_probed_buckets %f, num_buckets %d, ClusteringTime %f, avg_SearchingTime %f, wrst_SearchingTime %f \n",
                 L, m, W,
                 performance_ptr->wrst_PtsChecked,
                 performance_ptr->avg_PtsChecked,
@@ -782,6 +789,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                 performance_ptr->avg_rho,
                 performance_ptr->tau,
                 performance_ptr->tau_other,
+                performance_ptr->avg_numb_probed_buckets,
                 performance_ptr->num_buckets,
                 performance_ptr->ClusteringTime,
                 performance_ptr->avg_SearchingTime,
@@ -797,6 +805,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                       "avg_rho %f, "
                                       "tau %f, "
                                       "tau_other %f, "
+                                      "avg_num_probed_buckets %f, "
                                       "num_buckets %d,"
                                       "ClusteringTime %f,"
                                       "avg_SearchingTime %f, "
@@ -811,6 +820,7 @@ int searchLSH(int dim, int i0, int im, double *data, int nqueries, double *queri
                                       performance_ptr->avg_rho,
                                       performance_ptr->tau,
                                       performance_ptr->tau_other,
+                                      performance_ptr->avg_numb_probed_buckets,
                                       performance_ptr->num_buckets,
                                       performance_ptr->ClusteringTime,
                                       performance_ptr->avg_SearchingTime,
@@ -1088,6 +1098,7 @@ int main() {
         performance->tau = 0;
         performance->tau_other = 0;
         performance->num_buckets = 0;
+        performance->avg_numb_probed_buckets = 0;
 
         applyLSH(dim, 0, im, data, param_ptr, datum, datum_hashval, buckets_ptr, performance, i);
         searchLSH(dim, 0, im, data, nqueries, queries, param_ptr, buckets_ptr, datum, datum_hashval, performance,

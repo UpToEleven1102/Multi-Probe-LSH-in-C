@@ -11,3 +11,7 @@ LSH_iid.c
 lsh
 
 choose_params.txt
+
+output.txt
+
+.DS_Store
